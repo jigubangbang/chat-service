@@ -9,10 +9,10 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.jigubangbang</groupId>
-	<artifactId>user-service</artifactId>
+	<artifactId>chat-service</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>user-service</name>
-	<description>Demo project for Spring Boot</description>
+	<name>chat-service</name>
+	<description>Chat project for Spring Boot</description>
 	<url/>
 	<licenses>
 		<license/>
