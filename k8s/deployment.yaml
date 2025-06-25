@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chat-service-deployment # Deployment 리소스의 이름
+  labels:
+    app: chat-service # 이 Deployment를 식별하기 위한 라벨
+spec:
+  replicas: 1 # 실행할 Pod의 복제본 수 (여기서는 1개)
+  selector:
+    matchLabels:
+      app: chat-service # 이 Deployment가 관리할 Pod를 선택하는 라벨 셀렉터
+  template: # 생성될 Pod의 명세 (템플릿)
+    metadata:
+      labels:
+        app: chat-service # 생성될 Pod에 적용될 라벨 (위 selector와 일치해야 함)
+    spec:
+      # 초기화 컨테이너: Config Server와 Eureka Server가 준비될 때까지 대기합니다.
+      # chat-service가 이 두 인프라 서비스에 의존하므로 Init Container로 설정합니다.
+      initContainers:
+        - name: wait-for-config-server
+          image: curlimages/curl:latest # 경량 curl 이미지 사용
+          command:
+            - 'sh'
+            - '-c'
+            - 'until curl -s http://config-server:8888/actuator/health; do echo waiting for config-server; sleep 5; done;'
+        - name: wait-for-eureka
+          image: curlimages/curl:latest # 경량 curl 이미지 사용
+          command:
+            - 'sh'
+            - '-c'
+            - 'until curl -s http://eureka-server:8761/actuator/health; do echo waiting for eureka-server; sleep 10; done;'
+      containers:
+      - name: chat-service-container # Pod 내에서 실행될 컨테이너의 이름
+        image: __ECR_IMAGE_FULL_PATH__ # 사용할 Docker 이미지 경로로 변경 필요
+        ports:
+        - containerPort: 8083 # Chat Service Application이 내부적으로 사용하는 포트 (Dockerfile EXPOSE와 일치)
+        env:
+          # Spring Cloud Config Server URL (Kubernetes Service 이름 사용)
+          - name: SPRING_CLOUD_CONFIG_URI
+            value: "http://config-server:8888"
+          # Eureka Server URL (Kubernetes Service 이름 사용)
+          - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+            value: "http://eureka-server:8761/eureka/"
+          - name: SPRING_PROFILES_ACTIVE
+            value: "production" # Dockerfile과 통일된 프로파일 이름 사용
+          # Actuator 엔드포인트 노출 설정
+          - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
+            value: "health,liveness,readiness"
+        resources:
+          limits:
+            cpu: "300m" # Chat Service의 예상 리소스 사용량에 맞춰 조정 필요
+            memory: "1024Mi"
+          requests:
+            cpu: "200m"
+            memory: "512Mi"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness # Spring Boot 2.x 이상 엔드포인트
+            port: 8083 # Chat Service Application 포트
+          initialDelaySeconds: 60 # 컨테이너 시작 후 프로브 시작까지 대기 시간 (의존성 로딩 시간 고려)
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness # Spring Boot 2.x 이상 엔드포인트
+            port: 8083
+          initialDelaySeconds: 30
+          periodSeconds: 5
+          timeoutSeconds: 5
+          failureThreshold: 3
