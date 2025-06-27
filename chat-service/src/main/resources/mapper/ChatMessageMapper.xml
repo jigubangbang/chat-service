@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jigubangbang.chat_service.mapper.ChatMapper">
+
+  <resultMap id="chatRoomResultMap" type="com.jigubangbang.chat_service.model.ChatRoomDto">
+      <id property="id" column="id"/>
+      <result property="groupType" column="group_type"/>
+      <result property="groupId" column="group_id"/>
+      <result property="description" column="description"/>
+   </resultMap>
+
+  <resultMap id="chatMsgResultMap" type="com.jigubangbang.chat_service.model.ChatMsgDto">
+       <id property="id" column="id"/>
+       <result property="chatId" column="chat_id"/>
+       <result property="senderId" column="sender_id"/>
+       <result property="message" column="message"/>
+       <result property="createdAt" column="created_at"/>
+  </resultMap>
+
+  <select id="getChatRoomInfo" parameterType="java.lang.Long" resultMap="chatRoomResultMap">
+      SELECT id, group_type, group_id, description
+      FROM chat_room
+      WHERE id = #{chatId}
+  </select>
+
+  <select id="getChatMessages" parameterType="java.lang.Long" resultMap="chatMsgResultMap">
+      SELECT id, chat_id, sender_id, message, created_at
+      FROM chat_message
+      WHERE chat_id = #{chatId}
+      ORDER BY created_at ASC
+  </select>
+
+  <insert id="insertMessage" parameterType="com.jigubangbang.chat_service.model.ChatMsgDto" useGeneratedKeys="true" keyProperty="id">
+      INSERT INTO chat_message (chat_id, sender_id, message)
+      VALUES (#{chatId}, #{senderId}, #{message})
+  </insert>
+  
+</mapper>
