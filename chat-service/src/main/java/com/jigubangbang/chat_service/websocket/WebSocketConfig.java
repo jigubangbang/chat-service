@@ -9,7 +9,7 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @Configuration
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
-     @Override
+  @Override
   public void configureMessageBroker(MessageBrokerRegistry config) {
     config.enableSimpleBroker("/topic");                 // 구독 대상
     config.setApplicationDestinationPrefixes("/app");   // 메시지 보낼 prefix
@@ -18,7 +18,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
   @Override
   public void registerStompEndpoints(StompEndpointRegistry registry) {
     registry.addEndpoint("/api/ws-chat")
-            .setAllowedOrigins("http://localhost:5173") // CORS 설정
+            // .setAllowedOrigins("http://localhost:5173") // CORS 설정
             .withSockJS();          // SockJS fallback 사용
   }
 
