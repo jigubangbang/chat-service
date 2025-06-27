@@ -1,21 +1,15 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: chat-service # Service 리소스의 이름을 'chat-service'로 지정
+  name: chat-service
   labels:
-    app: chat-service # 이 Service를 식별하기 위한 라벨 (Deployment의 라벨과 일치)
+    app: chat-service
 spec:
-  # selector는 이 Service가 어떤 Pod들을 대상으로 할지 결정합니다.
-  # Deployment의 template.metadata.labels.app 값과 일치해야 합니다.
   selector:
     app: chat-service
-  # Service 타입:
-  # ClusterIP: 클러스터 내부에서만 접근 가능한 가상 IP를 할당합니다. (기본값)
-  # 다른 서비스나 API Gateway에서 이 Service 이름(chat-service)으로 접근하게 됩니다.
   type: ClusterIP
   ports:
-    # Chat Service 포트 매핑 (8083)
-    - name: http-chat # 포트 이름 (클러스터 내부에서 서비스 구분 용이)
-      protocol: TCP # 사용할 프로토콜 (기본값 TCP)
-      port: 8083 # 이 Service가 클러스터 내부에서 노출할 포트 번호
-      targetPort: 8083 # Service로 들어온 요청을 전달할 Pod 컨테이너의 포트
+    - name: http-chat
+      protocol: TCP
+      port: 8083
+      targetPort: 8083
