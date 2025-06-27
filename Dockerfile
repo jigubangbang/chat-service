@@ -1,12 +1,13 @@
 # 빌드 단계 (builder)
 FROM openjdk:17-jdk-slim AS builder
+
 WORKDIR /app
-COPY mvnw .
-COPY .mvn .mvn
-COPY pom.xml .
+COPY chat-service/mvnw .
+COPY chat-service/.mvn .mvn
+COPY chat-service/pom.xml .
 RUN chmod +x mvnw
 RUN ./mvnw dependency:go-offline -B
-COPY src ./src
+COPY chat-service/src ./src
 RUN ./mvnw package -DskipTests
 ARG JAR_FILE_NAME=target/*.jar
 RUN cp ${JAR_FILE_NAME} app.jar || { echo "JAR 파일이 target 디렉토리에서 발견되지 않았습니다. 빌드 로그를 확인하세요."; exit 1;}
