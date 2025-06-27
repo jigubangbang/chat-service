@@ -30,14 +30,6 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                script {
-                    // deployAWS 브랜치에 대한 푸시가 아니면 파이프라인 중단 (젠킨스 웹훅 필터링)
-                    if ("${env.BRANCH_NAME}" != "deployAWS") {
-                        echo "Skipping pipeline for branch: ${env.BRANCH_NAME}. Only 'deployAWS' branch triggers full pipeline."
-                        currentBuild.result = 'NOT_BUILT' // 빌드를 건너뛰고 'NOT_BUILT' 상태로 표시
-                        error "Push not on 'deployAWS' branch. Exiting." // 파이프라인 중단
-                    }
-                }
                 // deployAWS 브랜치 체크아웃
                 // credentialsId는 Jenkins에 등록된 GitHub PAT Credential ID여야 합니다.
                 // 이 레포지토리의 크리덴셜 ID를 사용하세요 (예: 'github-chat-service-pat')
@@ -65,6 +57,18 @@ pipeline {
                         sh "KUBECONFIG=${env.KUBECONFIG_PATH} kubectl wait --for=condition=available deployment/config-server-deployment -n default --timeout=600s || exit 1"
                     }
                     echo "Config Server is ready."
+
+                    // --- Config Server 상태 상세 디버깅 시작 (Chat Service 배포 전) ---
+                    echo "--- Config Server 상태 상세 디버깅 시작 ---"
+                    echo "Config Server 파드 목록:"
+                    sh "KUBECONFIG=${env.KUBECONFIG_PATH} kubectl get pods -n default -l app=config-server || true"
+                    echo "Config Server 배포 이벤트 확인:"
+                    sh "KUBECONFIG=${env.KUBECONFIG_PATH} kubectl describe deployment/config-server-deployment -n default || true"
+                    echo "Config Server 파드 로그 확인 (왜 DOWN 상태인지 확인):"
+                    sh "KUBECONFIG=${env.KUBECONFIG_PATH} kubectl get pods -n default -l app=config-server -o custom-columns=NAME:.metadata.name --no-headers | xargs -r -I {} sh -c 'echo \"--- Config Server 파드 {} 로그: ---\"; KUBECONFIG=${env.KUBECONFIG_PATH} kubectl logs {} -n default || true; echo \"\";' || true"
+                    echo "--- Config Server 상태 상세 디버깅 끝 ---"
+                    // --- Config Server 자체 디버깅 끝 ---
+
                     retry(3) {
                         sh "KUBECONFIG=${env.KUBECONFIG_PATH} kubectl wait --for=condition=available deployment/eureka-server-deployment -n default --timeout=600s || exit 1"
                     }
@@ -85,12 +89,43 @@ pipeline {
                         dockerImage.push("latest") // latest 태그도 함께 푸시
                     }
 
+                    // --- 기존 배포 강제 삭제 (새로운 이미지의 클린한 롤아웃을 보장하기 위해) ---
+                    echo "--- 기존 배포 강제 삭제 (새로운 이미지 클린 롤아웃 보장) ---"
+                    sh "KUBECONFIG=${env.KUBECONFIG_PATH} kubectl delete deployment chat-service-deployment -n default --ignore-not-found || true"
+                    sh "KUBECONFIG=${env.KUBECONFIG_PATH} kubectl wait --for=delete deployment/chat-service-deployment -n default --timeout=300s --for=delete || true"
+                    echo "--- 기존 배포 삭제 완료 (존재했다면) ---"
+                    // --- 기존 배포 강제 삭제 끝 ---
+
                     // Kubernetes Deployment/Service YAML 업데이트 및 적용
                     // k8s YAML 파일들은 chat-service/k8s/ 디렉토리에 있다고 가정
                     sh """
                         KUBECONFIG=${env.KUBECONFIG_PATH} sed -i "s|__ECR_IMAGE_FULL_PATH__|${fullEcrRepoUrl}:${env.IMAGE_TAG}|g" k8s/deployment.yaml
                         KUBECONFIG=${env.KUBECONFIG_PATH} kubectl apply -f k8s/deployment.yaml -n default
                         KUBECONFIG=${env.KUBECONFIG_PATH} kubectl apply -f k8s/service.yaml -n default
+                    """
+
+                    // --- Kubernetes Deployment Debugging (Chat Service 파드 관련) ---
+                    echo "--- Kubernetes Deployment Debugging (Chat Service 파드 관련) ---"
+                    echo "배포 상태 확인 전 파드 목록:"
+                    // 'app' 레이블은 k8s/deployment.yaml의 spec.selector.matchLabels에 있는 값을 사용해야 합니다.
+                    // 예시: app=chat-service
+                    sh "KUBECONFIG=${env.KUBECONFIG_PATH} kubectl get pods -n default -l app=chat-service || true"
+                    echo "배포 이벤트 확인:"
+                    sh "KUBECONFIG=${env.KUBECONFIG_PATH} kubectl describe deployment/chat-service-deployment -n default || true"
+
+                    echo "파드 로그 확인 (메인 컨테이너):"
+                    sh "KUBECONFIG=${env.KUBECONFIG_PATH} kubectl get pods -n default -l app=chat-service -o custom-columns=NAME:.metadata.name --no-headers | xargs -r -I {} sh -c 'echo \"--- 메인 컨테이너 {} 로그: ---\"; KUBECONFIG=${env.KUBECONFIG_PATH} kubectl logs {} -n default -c chat-service-container || true; echo \"\";' || true"
+
+                    echo "파드 초기화 컨테이너 로그 확인 (wait-for-config-server):"
+                    sh "KUBECONFIG=${env.KUBECONFIG_PATH} kubectl get pods -n default -l app=chat-service -o custom-columns=NAME:.metadata.name --no-headers | xargs -r -I {} sh -c 'echo \"--- 초기화 컨테이너 (config-server) {} 로그: ---\"; KUBECONFIG=${env.KUBECONFIG_PATH} kubectl logs {} -n default -c wait-for-config-server || true; echo \"\";' || true"
+
+                    echo "파드 초기화 컨테이너 로그 확인 (wait-for-eureka):"
+                    sh "KUBECONFIG=${env.KUBECONFIG_PATH} kubectl get pods -n default -l app=chat-service -o custom-columns=NAME:.metadata.name --no-headers | xargs -r -I {} sh -c 'echo \"--- 초기화 컨테이너 (eureka) {} 로그: ---\"; KUBECONFIG=${env.KUBECONFIG_PATH} kubectl logs {} -n default -c wait-for-eureka || true; echo \"\";' || true"
+
+                    echo "--- End Kubernetes Deployment Debugging (Chat Service 파드 관련) ---"
+                    // --- 디버깅 끝 ---
+
+                    sh """
                         KUBECONFIG=${env.KUBECONFIG_PATH} kubectl rollout status deployment/chat-service-deployment -n default --timeout=600s || exit 1
                     """
                     echo "Chat Service 배포 완료."
