@@ -16,8 +16,6 @@ RUN cp ${JAR_FILE_NAME} app.jar || { echo "JAR 파일이 target 디렉토리에�
 # 실행 단계 (runtime)
 FROM openjdk:17-slim
 RUN useradd --system --uid 1000 spring
-COPY entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
 USER spring
 VOLUME /tmp
 EXPOSE 8083
