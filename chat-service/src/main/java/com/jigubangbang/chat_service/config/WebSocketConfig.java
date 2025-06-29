@@ -1,4 +1,4 @@
-package com.jigubangbang.chat_service.websocket;
+package com.jigubangbang.chat_service.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
@@ -10,16 +10,17 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
   @Override
-  public void configureMessageBroker(MessageBrokerRegistry config) {
-    config.enableSimpleBroker("/topic");                 // 구독 대상
-    config.setApplicationDestinationPrefixes("/app");   // 메시지 보낼 prefix
+  public void configureMessageBroker(MessageBrokerRegistry registry) {
+    registry.enableSimpleBroker("/topic");     // -> 브로커(SimpleBroker)
+    registry.setApplicationDestinationPrefixes("/app");   // -> 서버(SimpAnnotationMethod) -> broker(Channel) -> /topic -> 브로커(SimpleBroker)
   }
 
   @Override
   public void registerStompEndpoints(StompEndpointRegistry registry) {
-    registry.addEndpoint("/api/ws-chat")
+    registry.addEndpoint("/ws/chat")
+            .setAllowedOriginPatterns("*");
             // .setAllowedOrigins("http://localhost:5173") // CORS 설정
-            .withSockJS();          // SockJS fallback 사용
+            // .withSockJS();          // SockJS fallback 사용
   }
 
 }

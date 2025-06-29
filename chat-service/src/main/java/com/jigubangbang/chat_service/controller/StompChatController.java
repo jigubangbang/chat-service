@@ -23,7 +23,7 @@ public class StompChatController {
     @Autowired
     private StompChatService chatService;
 
-    @MessageMapping("/api/ws-chat/chat.addUser/{chatId}")
+    @MessageMapping("/chat.addUser/{chatId}")
     public void addUser(
         @DestinationVariable Long chatId, @Payload ChatMsgDto chatMessage, SimpMessageHeaderAccessor headerAccessor) {
             headerAccessor.getSessionAttributes().put("userId", chatMessage.getSenderId());
@@ -45,7 +45,7 @@ public class StompChatController {
     }
 
     // 클라이언트가 메시지 보낼 때: /app/chat.send
-    @MessageMapping("/api/ws-chat/chat.send/{chatId}")
+    @MessageMapping("/chat.send/{chatId}")
     public void sendMessage(@DestinationVariable Long chatId, @Payload ChatMsgDto dto) {
         try {
             dto.setChatId(chatId);

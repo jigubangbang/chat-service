@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor // 기본 생성자
 @AllArgsConstructor
-public class ChatMsgDto {
+public class ChatMsgResponseDto {
     private Long id;
     private Long chatId;
     private String senderId;
