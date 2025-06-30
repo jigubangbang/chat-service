@@ -9,12 +9,12 @@ import java.time.LocalDateTime;
 
 @Getter
 @Setter
-@NoArgsConstructor // 기본 생성자
+@NoArgsConstructor
 @AllArgsConstructor
 public class ChatMsgResponseDto {
-    private Long id;
     private Long chatId;
     private String senderId;
-    private String message; 
+    private String message;
+    private String type; // "ENTER", "TALK", "LEAVE"
     private LocalDateTime createdAt;
 }

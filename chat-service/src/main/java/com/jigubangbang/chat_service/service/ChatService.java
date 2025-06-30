@@ -15,6 +15,7 @@ import com.jigubangbang.chat_service.mapper.ChatMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -31,7 +32,7 @@ public class ChatService {
             throw new IllegalArgumentException("채팅방을 찾을 수 없습니다: " + chatId);
         }
         // 이미 참여중인지 확인
-        ChatGroupDto existingMember = chatMapper.getChatRoomMember(chatId, userId);
+        ChatGroupDto existingMember = chatMapper.getChatGroupMember(chatId, userId);
         if (existingMember != null) {
             return existingMember; // 이미 참여중이면 기존 정보 반환
         }
@@ -63,7 +64,16 @@ public class ChatService {
         
         chatMapper.insertGroupMember(newMember);
         
-        return chatMapper.getChatRoomMember(chatId, userId);
+        return chatMapper.getChatGroupMember(chatId, userId);
+    }
+
+    // 채팅방 정보 조회
+    public ChatRoomDto getChatRoomInfo( Long chatId ){
+        return chatMapper.getChatRoomInfo(chatId);
+    }
+
+    public List<ChatGroupDto> getChatGroupMembers( Long chatId ) {
+        return chatMapper.getChatGroupMembers(chatId);
     }
 
     // 채팅 메세지 조회
@@ -71,15 +81,15 @@ public class ChatService {
         return chatMapper.getChatMessages(chatId);
     }
 
-    // 채팅 메세지 전송
-    public void sendMessage(ChatMsgDto dto) {
-        chatMapper.insertMessage(dto);
+    // 채팅 메세지 24시간 조회
+    public List<ChatMsgDto> getRecentChatMessages(Long chatId, LocalDateTime since) {
+        return chatMapper.getRecChatMessages(chatId, since);
     }
 
     /* 
     // 채팅 참여자 강제 탈퇴
     @Transactional
-    public void removeMemberByCreator(Long chatId, String userId, String CreatorId) {
+    public void removeGroupMember(Long chatId, String userId, String CreatorId) {
         // 관리자 권한 확인 - ChatGroupDto의 isCreator 필드 사용
         ChatGroupDto creatorId = chatMapper.getChatRoomMember(chatId, CreatorId);
         if (creatorId == null || !"Y".equals(creatorId.getIsCreator())) {
@@ -95,23 +105,30 @@ public class ChatService {
             throw new IllegalArgumentException("자기 자신을 강제 탈퇴시킬 수 없습니다.");
         }
         // 멤버 제거
-        chatMapper.deleteChatRoomMember(chatId, userId);
+        chatMapper.removeGroupMemberByCreator(chatId, userId);
     }
+    */
 
     // 채팅방 나가기
+    private void validateChatRoomMember(Long chatId, String userId) {
+        ChatGroupDto member = chatMapper.getChatGroupMember(chatId, userId);
+        if (member == null) {
+            throw new IllegalArgumentException("해당 사용자는 채팅방의 멤버가 아닙니다. chatId=" + chatId + ", userId=" + userId);
+        }
+    }
+
     @Transactional
-    public void leaveChatRoom(Long chatId, String userId) {
-        // 채팅방 참여 여부 확인
-        validateChatRoomMembership(chatId, userId);
-        
-        // 멤버 제거
-        chatMapper.deleteChatRoomMember(chatId, userId);
+    public void leaveGroupMember(Long chatId, String userId) {
+
+        validateChatRoomMember(chatId, userId);
+        chatMapper.leaveGroupMemberByUser(chatId, userId);
         
         // 채팅방에 남은 멤버가 없으면 채팅방 삭제 (선택사항)
+        /* 
         List<ChatRoomMemberDto> remainingMembers = chatMapper.getChatRoomMembersByChatId(chatId);
         if (remainingMembers.isEmpty()) {
             chatMapper.deleteChatRoom(chatId);
         }
+        */
     }
-    */
 }

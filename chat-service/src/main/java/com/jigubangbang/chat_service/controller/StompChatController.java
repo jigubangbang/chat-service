@@ -13,6 +13,7 @@ import org.springframework.stereotype.Controller;
 
 import com.jigubangbang.chat_service.model.ChatGroupDto;
 import com.jigubangbang.chat_service.model.ChatMsgDto;
+import com.jigubangbang.chat_service.model.ChatMsgResponseDto;
 import com.jigubangbang.chat_service.service.StompChatService;
 
 @Controller
@@ -24,25 +25,24 @@ public class StompChatController {
     private StompChatService chatService;
 
     @MessageMapping("/chat.addUser/{chatId}")
-    public void addUser(
-        @DestinationVariable Long chatId, @Payload ChatMsgDto chatMessage, SimpMessageHeaderAccessor headerAccessor) {
+    public void addUser(@DestinationVariable Long chatId, @Payload ChatMsgDto chatMessage, SimpMessageHeaderAccessor headerAccessor) {
             headerAccessor.getSessionAttributes().put("userId", chatMessage.getSenderId());
             headerAccessor.getSessionAttributes().put("chatId", chatId);
 
             System.out.println("STOMP: User " + chatMessage.getSenderId() + " joined chat " + chatId);
         
-        // 해당 채팅방의 모든 클라이언트에게 입장 메시지 브로드캐스트 (선택 사항)
-        // 프론트엔드의 client.subscribe(`/topic/chat/{chatId}`) 목적지로 전송됩니다.
-        /* 
-        ChatMsgDto joinMessage = new ChatMsgDto(
-            "System", // 시스템 메시지 발신자
-            chatMsgDto.getSenderId() + " 님이 입장했습니다.",
-            LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) // ISO 8601 형식
-        );
-        */
-        // messagingTemplate.convertAndSend("/topic/chat/" + chatId, joinMessage);
-        messagingTemplate.convertAndSend("/topic/chat/" + chatId);
-    }
+            // 입장 메세지 생성 (type: ENTER)
+            // 프론트엔드의 client.subscribe(`/topic/chat/{chatId}`) 목적지로 전송됩니다.
+            ChatMsgResponseDto joinMessage = new ChatMsgResponseDto();
+            joinMessage.setChatId(chatId);
+            joinMessage.setSenderId("System");
+            joinMessage.setMessage(chatMessage.getSenderId() + " 님이 입장했습니다.");
+            joinMessage.setType("ENTER");
+            joinMessage.setCreatedAt(LocalDateTime.now());
+            
+            messagingTemplate.convertAndSend("/topic/chat/" + chatId, joinMessage);
+        }
+        // messagingTemplate.convertAndSend("/topic/chat/" + chatId);
 
     // 클라이언트가 메시지 보낼 때: /app/chat.send
     @MessageMapping("/chat.send/{chatId}")
