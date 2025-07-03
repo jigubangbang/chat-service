@@ -8,6 +8,7 @@ import org.apache.ibatis.annotations.Mapper;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Mapper
 public interface ChatMapper {
@@ -28,9 +29,15 @@ public interface ChatMapper {
     void insertMessage(ChatMsgDto dto);
 
     // 채팅 참여자 강제 탈퇴
-    // void removeGroupMemberByCreator(String userId);
+    void removeGroupMemberByCreator(Map<String, Object> param);
 
     // 채팅방 나가기
     void leaveGroupMemberByUser(Long chatId, String userId);
+
+    // 회원 운영진 승격
+    void promoteToAdmin(String groupType, int groupId, String userId);
+
+    // 운영진 제외
+    void demoteAdmin(String groupType, int groupId, String userId);
 }
  

@@ -27,16 +27,17 @@
   </select>
 
   <select id="getChatGroupMember" resultMap="chatGroupResultMap">
-      SELECT id, group_type, group_id, user_id, joined_at, is_creator
-      FROM group_user
-      WHERE id = #{chatId} AND user_id = #{userId}
+      SELECT gu.id, gu.group_type, gu.group_id, gu.user_id, gu.joined_at, gu.is_creator
+        FROM chat_room cr
+            JOIN group_user gu ON cr.group_type = gu.group_type AND cr.group_id = gu.group_id
+        WHERE cr.id = #{chatId} AND gu.user_id = #{userId}
   </select>
 
   <select id="getChatGroupMembers" resultMap="chatGroupResultMap">
       SELECT gu.id, gu.group_type, gu.group_id, gu.user_id, gu.joined_at, gu.is_creator
-      FROM chat_room cr
-      JOIN group_user gu ON cr.group_type = gu.group_type AND cr.group_id = gu.group_id
-      WHERE cr.id = #{chatId}
+        FROM chat_room cr
+            JOIN group_user gu ON cr.group_type = gu.group_type AND cr.group_id = gu.group_id
+        WHERE cr.id = #{chatId}
   </select>
 
   <insert id="insertGroupMember" parameterType="com.jigubangbang.chat_service.model.ChatGroupDto" useGeneratedKeys="true" keyProperty="id">
@@ -44,14 +45,32 @@
       VALUES (#{groupType}, #{groupId}, #{userId}, #{isCreator})
   </insert>
 
-  <delete id="removeGroupMemberByCreator"> 
-      DELETE FROM group_user 
-      WHERE id= #{chatId} AND user_id = #{userId}
+  <delete id="removeGroupMemberByCreator" parameterType="map"> 
+      DELETE FROM group_user
+        WHERE group_id = (SELECT group_id FROM chat_room WHERE id = #{chatId})
+            AND group_type = (SELECT group_type FROM chat_room WHERE id = #{chatId})
+            AND user_id = #{userId}
   </delete>
 
   <delete id="leaveGroupMemberByUser"> 
       DELETE FROM group_user 
-      WHERE id= #{chatId} AND user_id = #{userId}
+        WHERE group_id= (SELECT group_id FROM chat_room WHERE id = #{chatId})
+          AND group_type = (SELECT group_type FROM chat_room WHERE id = #{chatId})
+          AND user_id = #{userId}
   </delete>
+
+  <update id="promoteToAdmin">
+      UPDATE group_user SET is_creator = 1
+        WHERE group_type = #{groupType}
+          AND group_id = #{groupId}
+          AND user_id = #{userId}
+  </update>
+
+  <update id="demoteAdmin">
+      UPDATE group_user SET is_creator = 0
+        WHERE group_type = #{groupType}
+          AND group_id = #{groupId}
+          AND user_id = #{userId}
+  </update>
 
 </mapper>

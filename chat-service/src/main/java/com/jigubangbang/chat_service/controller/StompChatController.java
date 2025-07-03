@@ -11,7 +11,6 @@ import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
-import com.jigubangbang.chat_service.model.ChatGroupDto;
 import com.jigubangbang.chat_service.model.ChatMsgDto;
 import com.jigubangbang.chat_service.model.ChatMsgResponseDto;
 import com.jigubangbang.chat_service.service.StompChatService;
@@ -28,11 +27,8 @@ public class StompChatController {
     public void addUser(@DestinationVariable Long chatId, @Payload ChatMsgDto chatMessage, SimpMessageHeaderAccessor headerAccessor) {
             headerAccessor.getSessionAttributes().put("userId", chatMessage.getSenderId());
             headerAccessor.getSessionAttributes().put("chatId", chatId);
-
-            System.out.println("STOMP: User " + chatMessage.getSenderId() + " joined chat " + chatId);
-        
-            // 입장 메세지 생성 (type: ENTER)
-            // 프론트엔드의 client.subscribe(`/topic/chat/{chatId}`) 목적지로 전송됩니다.
+            
+            // 프론트엔드의 client.subscribe(`/topic/chat/{chatId}`)로 전송
             ChatMsgResponseDto joinMessage = new ChatMsgResponseDto();
             joinMessage.setChatId(chatId);
             joinMessage.setSenderId("System");
@@ -42,7 +38,6 @@ public class StompChatController {
             
             messagingTemplate.convertAndSend("/topic/chat/" + chatId, joinMessage);
         }
-        // messagingTemplate.convertAndSend("/topic/chat/" + chatId);
 
     // 클라이언트가 메시지 보낼 때: /app/chat.send
     @MessageMapping("/chat.send/{chatId}")
@@ -59,12 +54,4 @@ public class StompChatController {
             // messagingTemplate.convertAndSendToUser(chatMessage.getSenderId(), "/queue/errors", "메시지 전송 실패!");
         }
     }
-    /* 
-    // 클라이언트가 입장할 때 호출 가능 (옵션)
-    @MessageMapping("/chat.enter")
-    public void enter(ChatGroupDto enterUser) {
-        String systemMessage = enterUser.getUserId() + "님이 입장하셨습니다.";
-        messagingTemplate.convertAndSend("/topic/chat/" + enterUser.getGroupId(), systemMessage);
-    }
-    */
 }

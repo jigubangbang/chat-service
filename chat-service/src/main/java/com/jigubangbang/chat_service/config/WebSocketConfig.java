@@ -19,8 +19,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
   public void registerStompEndpoints(StompEndpointRegistry registry) {
     registry.addEndpoint("/ws/chat")
             .setAllowedOriginPatterns("*");
-            // .setAllowedOrigins("http://localhost:5173") // CORS 설정
-            // .withSockJS();          // SockJS fallback 사용
+            //.setAllowedOrigins("http://localhost:8080") // CORS 설정
+            //.withSockJS().setSuppressCors(true);          // SockJS fallback 사용
   }
 
 }
