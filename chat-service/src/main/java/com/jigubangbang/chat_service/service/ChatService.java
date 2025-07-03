@@ -1,5 +1,6 @@
 package com.jigubangbang.chat_service.service;
 
+import com.jigubangbang.chat_service.model.ChatDescRequestDto;
 import com.jigubangbang.chat_service.model.ChatGroupDto;
 import com.jigubangbang.chat_service.model.ChatMsgDto;
 import com.jigubangbang.chat_service.model.ChatRoomDto;
@@ -154,6 +155,17 @@ public class ChatService {
         int groupId = targetMember.getGroupId();
 
         chatMapper.demoteAdmin(groupType,groupId, userId);
+    }
+
+    // 채팅방 정보 수정
+    public String updateDescription(Long chatId, ChatDescRequestDto newDescription, String requestorId) {
+        ChatRoomDto chatRoom = chatMapper.getChatRoomInfo(chatId);
+        if (chatRoom == null) {
+            throw new IllegalArgumentException("채팅방을 찾을 수 없습니다: " + chatId);
+        }
+        chatRoom.setDescription(newDescription.getDescription());
+        chatMapper.saveDescription(chatRoom);
+        return "설명이 수정되었습니다.";
     }
 
 }

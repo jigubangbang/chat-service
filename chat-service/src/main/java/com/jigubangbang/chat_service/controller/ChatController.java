@@ -1,5 +1,6 @@
 package com.jigubangbang.chat_service.controller;
 
+import com.jigubangbang.chat_service.model.ChatDescRequestDto;
 import com.jigubangbang.chat_service.model.ChatGroupDto;
 import com.jigubangbang.chat_service.model.ChatMsgDto;
 import com.jigubangbang.chat_service.model.ChatMsgResponseDto;
@@ -107,6 +108,13 @@ public class ChatController {
     public ResponseEntity<Void> demoteAdmin(@PathVariable Long chatId, @PathVariable String userId) {
         chatService.demoteAdmin(chatId, userId);
         return ResponseEntity.ok().build();
+    }
+
+    // 채팅방 정보 수정
+    @PutMapping("/{chatId}/description")
+    public ResponseEntity<String> updateDescription(@PathVariable Long chatId, @RequestBody ChatDescRequestDto request, @RequestHeader("User-Id") String userId) {
+        chatService.updateDescription(chatId, request,userId);
+        return ResponseEntity.ok("채팅방 설명이 수정되었습니다.");
     }
 
     // 타 서비스와 연동 함수

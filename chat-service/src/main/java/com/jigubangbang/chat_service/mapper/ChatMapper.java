@@ -39,5 +39,9 @@ public interface ChatMapper {
 
     // 운영진 제외
     void demoteAdmin(String groupType, int groupId, String userId);
+
+    // 채팅방 정보 수정
+    int saveDescription(ChatRoomDto chatRoomDto);
+
 }
  

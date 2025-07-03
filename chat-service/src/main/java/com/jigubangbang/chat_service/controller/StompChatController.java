@@ -1,7 +1,6 @@
 package com.jigubangbang.chat_service.controller;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
@@ -27,7 +26,7 @@ public class StompChatController {
     public void addUser(@DestinationVariable Long chatId, @Payload ChatMsgDto chatMessage, SimpMessageHeaderAccessor headerAccessor) {
             headerAccessor.getSessionAttributes().put("userId", chatMessage.getSenderId());
             headerAccessor.getSessionAttributes().put("chatId", chatId);
-            
+
             // 프론트엔드의 client.subscribe(`/topic/chat/{chatId}`)로 전송
             ChatMsgResponseDto joinMessage = new ChatMsgResponseDto();
             joinMessage.setChatId(chatId);
