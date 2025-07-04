@@ -75,6 +75,9 @@ public class ChatController {
         leaveMessage.setCreatedAt(LocalDateTime.now());
         
         messagingTemplate.convertAndSend("/topic/chat/" + chatId, leaveMessage);
+        messagingTemplate.convertAndSend("/topic/chat/" + chatId + "/kick/" + userId,
+            "강제 퇴장 처리되었습니다."
+        );
         return ResponseEntity.ok().build();
     }
 
