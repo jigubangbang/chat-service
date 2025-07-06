@@ -75,9 +75,19 @@ public class ChatController {
         leaveMessage.setCreatedAt(LocalDateTime.now());
         
         messagingTemplate.convertAndSend("/topic/chat/" + chatId, leaveMessage);
-        messagingTemplate.convertAndSend("/topic/chat/" + chatId + "/kick/" + userId,
-            "강제 퇴장 처리되었습니다."
+
+        ChatMsgResponseDto kickMessage = new ChatMsgResponseDto();
+        kickMessage.setChatId(chatId);
+        kickMessage.setSenderId("System");
+        kickMessage.setMessage("운영진에 의해 강제 퇴장 처리되었습니다.");
+        kickMessage.setType("KICK");
+        kickMessage.setCreatedAt(LocalDateTime.now());
+        messagingTemplate.convertAndSendToUser(
+            userId, 
+            "/queue/kick", 
+            kickMessage
         );
+        
         return ResponseEntity.ok().build();
     }
 
