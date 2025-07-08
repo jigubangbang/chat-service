@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jigubangbang.chat_service.mapper.NotificationMapper">
+
+    <resultMap id="notificationResultMap" type="com.jigubangbang.chat_service.model.NotificationDto">
+      <id property="id" column="id"/>
+      <result property="userId" column="user_id"/>
+      <result property="type" column="type"/>
+      <result property="title" column="title"/>
+      <result property="message" column="message"/>
+      <result property="relatedId" column="related_id"/>
+      <result property="relatedType" column="related_type"/>
+      <result property="relatedUrl" column="related_url"/>
+      <result property="senderId" column="sender_id"/>
+      <result property="senderProfileImage" column="sender_profile_image"/>
+      <result property="isRead" column="is_read"/>
+      <result property="readAt" column="read_at"/>
+      <result property="createdAt" column="created_at"/>
+      <result property="updatedAt" column="updated_at"/>
+   </resultMap>
+
+    <!-- 알림 삽입 -->
+    <insert id="insertNotification" parameterType="com.jigubangbang.chat_service.model.NotificationDto" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO notifications (
+            user_id, type, title, message,
+            related_id, related_type, related_url,
+            sender_id, sender_profile_image
+        ) VALUES (
+            #{userId}, #{type}, #{title}, #{message},
+            #{relatedId}, #{relatedType}, #{relatedUrl},
+            #{senderId}, #{senderProfileImage}
+        )
+    </insert>
+
+    <!-- 읽지 않은 알림 조회 -->
+    <select id="findUnreadNotifications" resultMap="notificationResultMap">
+        SELECT 
+            id, user_id, type, title, message,
+            related_id, related_type, related_url,
+            sender_id, sender_profile_image,
+            is_read, read_at, created_at, updated_at
+        FROM notifications
+        WHERE user_id = #{userId} 
+          AND is_read = FALSE
+        ORDER BY created_at DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 모든 알림 조회 (페이징) -->
+    <select id="findAllNotifications" resultMap="notificationResultMap">
+        SELECT 
+            id, user_id, type, title, message,
+            related_id, related_type, related_url,
+            sender_id, sender_profile_image,
+            is_read, read_at, created_at, updated_at
+        FROM notifications
+        WHERE user_id = #{userId}
+        ORDER BY created_at DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <!-- 읽지 않은 알림 개수 -->
+    <select id="countUnreadNotifications" resultType="int">
+        SELECT COUNT(*)
+        FROM notifications
+        WHERE user_id = #{userId} 
+          AND is_read = FALSE
+    </select>
+
+    <!-- 알림 읽음 처리 -->
+    <update id="markAsRead">
+        UPDATE notifications
+        SET is_read = TRUE, read_at = #{readAt}, updated_at = NOW()
+        WHERE id = #{id} AND user_id = #{userId}
+    </update>
+
+    <!-- 모든 알림 읽음 처리 -->
+    <update id="markAllAsRead">
+        UPDATE notifications
+        SET is_read = TRUE, read_at = #{readAt}, updated_at = NOW()
+        WHERE user_id = #{userId} AND is_read = FALSE
+    </update>
+
+    <!-- 알림 삭제 -->
+    <delete id="deleteNotification">
+        DELETE FROM notifications
+        WHERE id = #{id} AND user_id = #{userId}
+    </delete>
+
+    <!-- 알림 설정 조회
+    <select id="findNotificationSettings" resultType="map">
+        SELECT 
+            comment_enabled as commentEnabled,
+            vote_enabled as voteEnabled,
+            group_enabled as groupEnabled,
+            quest_enabled as questEnabled,
+            badge_enabled as badgeEnabled,
+            feed_enabled as feedEnabled,
+            follow_enabled as followEnabled,
+            inquiry_enabled as inquiryEnabled,
+            push_enabled as pushEnabled,
+            email_enabled as emailEnabled
+        FROM notification_settings
+        WHERE user_id = #{userId}
+    </select>
+
+    알림 설정 업데이트 
+    <insert id="updateNotificationSettings">
+        INSERT INTO notification_settings (
+            user_id, comment_enabled, vote_enabled, group_enabled, quest_enabled,
+            badge_enabled, feed_enabled, follow_enabled, inquiry_enabled,
+            push_enabled, email_enabled, updated_at
+        ) VALUES (
+            #{userId}, 
+            #{settings.commentEnabled, jdbcType=BOOLEAN},
+            #{settings.voteEnabled, jdbcType=BOOLEAN},
+            #{settings.groupEnabled, jdbcType=BOOLEAN},
+            #{settings.questEnabled, jdbcType=BOOLEAN},
+            #{settings.badgeEnabled, jdbcType=BOOLEAN},
+            #{settings.feedEnabled, jdbcType=BOOLEAN},
+            #{settings.followEnabled, jdbcType=BOOLEAN},
+            #{settings.inquiryEnabled, jdbcType=BOOLEAN},
+            #{settings.pushEnabled, jdbcType=BOOLEAN},
+            #{settings.emailEnabled, jdbcType=BOOLEAN},
+            NOW()
+        ) ON DUPLICATE KEY UPDATE
+            comment_enabled = VALUES(comment_enabled),
+            vote_enabled = VALUES(vote_enabled),
+            group_enabled = VALUES(group_enabled),
+            quest_enabled = VALUES(quest_enabled),
+            badge_enabled = VALUES(badge_enabled),
+            feed_enabled = VALUES(feed_enabled),
+            follow_enabled = VALUES(follow_enabled),
+            inquiry_enabled = VALUES(inquiry_enabled),
+            push_enabled = VALUES(push_enabled),
+            email_enabled = VALUES(email_enabled),
+            updated_at = VALUES(updated_at)
+    </insert>
+
+    특정 기간 이후 알림 조회 (폴링 최적화용)
+    <select id="findNotificationsSince" resultType="com.igubangbang.model.NotificationDto">
+        SELECT 
+            id, user_id as userId, type, title, message,
+            related_id as relatedId, related_type as relatedType, related_url as relatedUrl,
+            sender_id as senderId, sender_name as senderName, sender_profile_image as senderProfileImage,
+            is_read as isRead, read_at as readAt,
+            metadata, created_at as createdAt, updated_at as updatedAt
+        FROM notifications
+        WHERE user_id = #{userId}
+          AND created_at > #{since}
+        ORDER BY created_at DESC
+        LIMIT #{limit}
+    </select>
+
+    오래된 알림 정리 (배치 작업용) 
+    <delete id="cleanupOldNotifications">
+        DELETE FROM notifications
+        WHERE created_at < DATE_SUB(NOW(), INTERVAL #{days} DAY)
+          AND is_read = TRUE
+    </delete>
+    -->
+
+</mapper>
