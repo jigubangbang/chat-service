@@ -75,8 +75,15 @@ public class ChatController {
         leaveMessage.setCreatedAt(LocalDateTime.now());
         
         messagingTemplate.convertAndSend("/topic/chat/" + chatId, leaveMessage);
+
+        // 강퇴당한 유저에게 보낼 특정 메시지를 JSON 객체로 생성
+        ChatMsgResponseDto kickAlertMessage = new ChatMsgResponseDto();
+        kickAlertMessage.setChatId(chatId);
+        kickAlertMessage.setMessage("관리자에 의해 채팅방에서 강제퇴장당했습니다.");
+
+        // 생성한 객체를 전송
         messagingTemplate.convertAndSend("/topic/chat/" + chatId + "/kick/" + userId,
-            "강제 퇴장 처리되었습니다."
+            kickAlertMessage
         );
         return ResponseEntity.ok().build();
     }
