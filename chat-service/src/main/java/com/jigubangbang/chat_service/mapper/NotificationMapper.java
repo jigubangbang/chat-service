@@ -15,7 +15,7 @@ public interface NotificationMapper {
 
     List<NotificationDto> findUnreadNotifications(String userId, int limit);
     List<NotificationDto> findAllNotifications(String userId, int limit, int offset);
-    
+    List<NotificationDto> findNotificationsSince(String userId, int limit, int offset, LocalDateTime since);
     int countUnreadNotifications(String userId);
     
     void markAsRead(Long id, String userId, LocalDateTime readAt);

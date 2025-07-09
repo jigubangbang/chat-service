@@ -61,6 +61,20 @@
         LIMIT #{limit} OFFSET #{offset}
     </select>
 
+    <!-- 모든 알림 조회 (7일 이내) -->
+    <select id="findNotificationsSince" resultMap="notificationResultMap">
+        SELECT 
+            id, user_id, type, title, message,
+            related_id, related_type, related_url,
+            sender_id, sender_profile_image,
+            is_read, read_at, created_at, updated_at
+        FROM notifications
+        WHERE user_id = #{userId}
+            AND created_at &gt; #{since}
+        ORDER BY created_at DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
     <!-- 읽지 않은 알림 개수 -->
     <select id="countUnreadNotifications" resultType="int">
         SELECT COUNT(*)
@@ -138,21 +152,6 @@
             email_enabled = VALUES(email_enabled),
             updated_at = VALUES(updated_at)
     </insert>
-
-    특정 기간 이후 알림 조회 (폴링 최적화용)
-    <select id="findNotificationsSince" resultType="com.igubangbang.model.NotificationDto">
-        SELECT 
-            id, user_id as userId, type, title, message,
-            related_id as relatedId, related_type as relatedType, related_url as relatedUrl,
-            sender_id as senderId, sender_name as senderName, sender_profile_image as senderProfileImage,
-            is_read as isRead, read_at as readAt,
-            metadata, created_at as createdAt, updated_at as updatedAt
-        FROM notifications
-        WHERE user_id = #{userId}
-          AND created_at > #{since}
-        ORDER BY created_at DESC
-        LIMIT #{limit}
-    </select>
 
     오래된 알림 정리 (배치 작업용) 
     <delete id="cleanupOldNotifications">

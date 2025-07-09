@@ -22,9 +22,15 @@ public class NotificationService {
         return notificationMapper.findUnreadNotifications(userId, limit);
     }
     
-    public List<NotificationDto> getAllNotifications(String userId, int page, int size) {
+    public List<NotificationDto> getAllNotifications(String userId, int page, int size, int days) {
         int offset = page * size;
-        return notificationMapper.findAllNotifications(userId, size, offset);
+        if (days > 0) {
+            // 특정 일수 이내의 알림만 조회
+            LocalDateTime since = LocalDateTime.now().minusDays(days);
+            return notificationMapper.findNotificationsSince(userId, size, offset, since);
+        } else {
+            return notificationMapper.findAllNotifications(userId, size, offset);
+        }
     }
     
     public int getUnreadCount(String userId) {

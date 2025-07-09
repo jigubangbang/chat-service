@@ -24,6 +24,14 @@ public class NotificationController {
     @Autowired
     private NotificationService notificationService;
 
+    // 7일 이내 전체 알림 조회
+    @GetMapping("/all")
+    public ResponseEntity<List<NotificationDto>> getAllNotifications(@RequestHeader("User-Id") String userId, 
+            @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "7") int size, @RequestParam(defaultValue = "7") int days) {
+        List<NotificationDto> notifications = notificationService.getAllNotifications(userId, page, size, days);
+        return ResponseEntity.ok(notifications);
+    }
+
     // 읽지 않은 알림 조회
     @GetMapping("/unread")
     public ResponseEntity<List<NotificationDto>> getUnreadNotifications(@RequestHeader("User-Id") String userId, @RequestParam(defaultValue = "20") int limit) {
@@ -31,7 +39,15 @@ public class NotificationController {
         return ResponseEntity.ok(notifications);
     }
 
-     // 알림 읽음 처리
+    // 읽지 않은 알림 개수 조회
+    @GetMapping("/unread-count")
+    public ResponseEntity<Integer> getUnreadCount(@RequestHeader("User-Id") String userId) {
+        int count = notificationService.getUnreadCount(userId);
+        return ResponseEntity.ok(count);
+    }
+
+
+    // 알림 읽음 처리
     @PostMapping("/{id}/read")
     public ResponseEntity<Void> markAsRead(@PathVariable Long id, @RequestHeader("User-Id") String userId) {
         notificationService.markAsRead(id, userId);

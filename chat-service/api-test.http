@@ -11,7 +11,7 @@ POST http://localhost:8080/api/notifications
 Content-Type: application/json
 
 {
-  "userId": "aaa",
+  "userId": "seolylee",
   "type": "GENERAL",
   "title": "테스트 알림",
   "message": "이것은 테스트 알림입니다.",

@@ -1,0 +1,50 @@
+# 서버 설정 (로컬 개발 환경 기준)
+@baseUrl = http://localhost:8080/api
+@userId = bbb
+
+### 1. 읽지 않은 알림 조회 (기본 limit: 20)
+GET {{baseUrl}}/notifications/unread
+User-Id: {{userId}}
+
+###
+
+### 2. 읽지 않은 알림 조회 (limit 지정)
+GET {{baseUrl}}/notifications/unread?limit=3
+User-Id: {{userId}}
+
+###
+
+### 3. 특정 알림 읽음 처리
+POST {{baseUrl}}/notifications/1/read
+User-Id: {{userId}}
+
+###
+
+### 4. 모든 알림 읽음 처리
+POST {{baseUrl}}/notifications/read-all
+User-Id: {{userId}}
+
+###
+
+### 5. 알림 삭제
+DELETE {{baseUrl}}/notifications/12
+User-Id: "aaa"
+
+###
+
+### 주석 처리된 알림 설정 조회 (개발 완료 시 주석 해제)
+# GET {{baseUrl}}/notifications/settings
+# User-Id: {{userId}}
+
+###
+
+### 테스트용 더미 데이터 생성 (백엔드에 해당 API가 있다면)
+# POST {{baseUrl}}/notifications/test-data
+# User-Id: {{userId}}
+# Content-Type: application/json
+
+# {
+#   "type": "CHAT_MESSAGE",
+#   "message": "새로운 메시지가 도착했습니다.",
+#   "relatedId": "chat-room-123"
+# }
