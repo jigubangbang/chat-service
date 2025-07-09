@@ -1,0 +1,419 @@
+### 변수 설정
+@chatServiceDirect = http://localhost:8083
+@feedServiceDirect = http://localhost:8084
+@gatewayService = http://localhost:8080/api
+@testGateway = http://localhost:8080/api
+@testUserId = aaa
+@testSenderId = bbb
+
+### 범용 알림 테스트
+POST http://localhost:8080/api/notifications
+Content-Type: application/json
+
+{
+  "userId": "seolylee",
+  "type": "GENERAL",
+  "title": "테스트 알림",
+  "message": "이것은 테스트 알림입니다.",
+  "relatedType": "TEST",
+  "relatedUrl": "/test",
+  "senderId": "aaa"
+}
+###
+
+### 1-1. 범용 알림 (직접 chat-service)
+POST {{chatServiceDirect}}/notifications
+Content-Type: application/json
+
+{
+  "userId": "{{testUserId}}",
+  "type": "GENERAL",
+  "title": "시스템 점검 안내",
+  "message": "오늘 밤 12시부터 2시까지 시스템 점검이 있습니다.",
+  "relatedType": "SYSTEM",
+  "relatedUrl": "/announcements/1",
+  "senderId": "SYSTEM"
+}
+
+###
+
+### 1-2. 범용 알림 (테스트 Gateway)
+POST {{testGateway}}/notifications
+Content-Type: application/json
+
+{
+  "userId": "{{testUserId}}",
+  "type": "ANNOUNCEMENT",
+  "title": "새로운 기능 출시",
+  "message": "새로운 여행 추천 기능이 출시되었습니다!",
+  "relatedType": "FEATURE",
+  "relatedUrl": "/features/travel-recommendation",
+  "senderId": "SYSTEM"
+}
+
+###
+
+### ===========================================
+### 2. 피드 서비스 알림 테스트
+### ===========================================
+
+### 2-1. 팔로우 알림
+POST {{chatServiceDirect}}/notifications/feed/follow
+Content-Type: application/json
+
+{
+  "authorId": "shyunam",
+  "feedId": 1,
+  "relatedUrl": "/profile/bbb",
+  "senderId": "bbb",
+  "senderProfileImage": "https://example.com/profiles/bbb.jpg"
+}
+
+###
+
+### 2-2. 피드 좋아요 알림
+POST {{chatServiceDirect}}/notifications/feed/like
+Content-Type: application/json
+
+{
+  "authorId": "bbb",
+  "feedId": 12,
+  "relatedUrl": "/feed/12",
+  "senderId": "shyunam",
+  "senderProfileImage": "https://example.com/profiles/bbb.jpg"
+}
+
+###
+
+### 2-3. 피드 댓글 알림
+POST {{chatServiceDirect}}/notifications/feed/comment
+Content-Type: application/json
+
+{
+  "authorId": "bbb",
+  "feedId": 1,
+  "relatedUrl": "/feed/1",
+  "senderId": "shyunam",
+  "senderProfileImage": "https://example.com/profiles/bbb.jpg"
+}
+
+###
+
+### 2-4. 피드 알림 (Gateway 테스트)
+POST {{testGateway}}/notifications/feed/follow
+Content-Type: application/json
+
+{
+  "authorId": "shyunam",
+  "feedId": 201,
+  "relatedUrl": "/profile/ccc",
+  "senderId": "ccc",
+  "senderProfileImage": "https://example.com/profiles/ccc.jpg"
+}
+
+###
+
+### ===========================================
+### 3. 커뮤니티 서비스 알림 테스트
+### ===========================================
+
+### 3-1. 게시물 댓글 알림
+POST {{testGateway}}/notifications/posts/comment
+Content-Type: application/json
+
+{
+  "authorId": "aaa",
+  "postId": 301,
+  "relatedUrl": "/community/posts/301",
+  "senderId": "bbb",
+  "senderProfileImage": "https://example.com/profiles/bbb.jpg"
+}
+
+###
+
+### ===========================================
+### 4. 그룹/여행메이트 알림 테스트
+### ===========================================
+
+### 4-1. 그룹 가입 신청 알림
+POST {{testGateway}}/notifications/travelgroup/applications
+Content-Type: application/json
+
+{
+  "creatorId": "seolylee",
+  "groupName": "제주도 3박4일 여행",
+  "groupId": 101,
+  "relatedUrl": "/travelmates/101",
+  "applicantId": "aaa"
+}
+
+###
+
+### 4-2. 그룹 가입 승인 알림
+POST {{testGateway}}/notifications/travelgroup/applications/seolylee
+Content-Type: application/json
+
+{
+  "applicantId": "seolylee",
+  "groupName": "제주도 3박4일 여행",
+  "groupId": 103,
+  "relatedUrl": "/travelmates/103",
+  "creatorId": "bbb"
+}
+
+###
+
+### ===========================================
+### 5. 퀘스트
+### ===========================================
+
+### 뱃지 획득 알림 테스트
+POST http://localhost:8083/notifications/quests/badges/earned
+Content-Type: application/json
+
+{
+  "userId": "aaa",
+  "badgeName": "첫 여행 완주자",
+  "badgeId": 24,
+  "relatedUrl": "/quests/badges/24",
+  "senderId": "aaa",
+  "senderProfileImage": null,
+  "message": null
+}
+
+###
+
+### 뱃지 수거 알림 테스트
+POST http://localhost:8080/api/notifications/admin/badges/revoked
+Content-Type: application/json
+
+{
+  "userId": "aaa",
+  "badgeName": "첫 여행 완주자",
+  "badgeId": 24,
+  "relatedUrl": "/help/badge-policy",
+  "senderId": "aaa",
+  "senderProfileImage": null,
+  "message": "부정 행위로 인한 회수"
+}
+
+###
+
+### ===========================================
+### 6. 고객 서비스 알림 테스트
+### ===========================================
+
+### 5-1. 1:1 문의 답변 알림
+POST {{testGateway}}/notifications/inqury
+Content-Type: application/json
+
+{
+  "userId": "{{testUserId}}",
+  "title": "문의 답변이 등록되었습니다",
+  "message": "결제 관련 문의에 대한 답변이 등록되었습니다. 확인해 주세요.",
+  "relatedUrl": "/inquiries/501",
+  "senderId": "aaa"
+}
+
+###
+
+### 5-2. 문의 답변 알림 (Gateway)
+POST {{testGateway}}/notifications/inqury
+Content-Type: application/json
+
+{
+  "userId": "{{testUserId}}",
+  "title": "기술 지원 답변 완료",
+  "message": "앱 오류 문제에 대한 해결책을 안내드렸습니다.",
+  "relatedUrl": "/inquiries/502",
+  "senderId": "aaa"
+}
+
+###
+
+### ===========================================
+### 6. 다양한 시나리오 테스트
+### ===========================================
+
+### 6-1. 여러 사용자 팔로우 테스트
+POST {{chatServiceDirect}}/notifications/feed/follow
+Content-Type: application/json
+
+{
+  "authorId": "user001",
+  "feedId": 601,
+  "relatedUrl": "/profile/user002",
+  "senderId": "user002",
+  "senderProfileImage": "https://example.com/profiles/user002.jpg"
+}
+
+###
+
+### 6-2. 인기 게시물 댓글 알림
+POST {{chatServiceDirect}}/notifications/posts/comment
+Content-Type: application/json
+
+{
+  "authorId": "user001",
+  "postId": 602,
+  "relatedUrl": "/community/posts/602",
+  "senderId": "user003",
+  "senderProfileImage": "https://example.com/profiles/user003.jpg"
+}
+
+###
+
+### 6-3. 대용량 그룹 신청 알림
+POST {{chatServiceDirect}}/notifications/travelmates/applications
+Content-Type: application/json
+
+{
+  "creatorId": "user001",
+  "groupName": "전국 맛집 탐방 (50명 모집)",
+  "groupId": 603,
+  "relatedUrl": "/travelmates/603",
+  "applicantId": "user004"
+}
+
+###
+
+### 6-4. 긴급 공지 알림
+POST {{chatServiceDirect}}/notifications
+Content-Type: application/json
+
+{
+  "userId": "{{testUserId}}",
+  "type": "URGENT",
+  "title": "🚨 긴급 공지",
+  "message": "보안 업데이트로 인해 임시 서비스 중단이 있을 예정입니다.",
+  "relatedType": "SECURITY",
+  "relatedUrl": "/announcements/urgent",
+  "senderId": "SYSTEM"
+}
+
+###
+
+### ===========================================
+### 7. 에러 케이스 테스트
+### ===========================================
+
+### 7-1. 존재하지 않는 사용자 (외래키 에러 예상)
+POST {{chatServiceDirect}}/notifications/feed/follow
+Content-Type: application/json
+
+{
+  "authorId": "nonexistent_user",
+  "feedId": 701,
+  "relatedUrl": "/profile/test",
+  "senderId": "{{testSenderId}}",
+  "senderProfileImage": "https://example.com/test.jpg"
+}
+
+###
+
+### 7-2. 필수 필드 누락 (400 에러 예상)
+POST {{chatServiceDirect}}/notifications/feed/like
+Content-Type: application/json
+
+{
+  "authorId": "{{testUserId}}",
+  "relatedUrl": "/feed/702"
+  // feedId, senderId 누락
+}
+
+###
+
+### 7-3. 잘못된 JSON 형식 (400 에러 예상)
+POST {{chatServiceDirect}}/notifications/posts/comment
+Content-Type: application/json
+
+{
+  "authorId": "{{testUserId}}",
+  "postId": "invalid_number",
+  "relatedUrl": "/posts/703",
+  "senderId": "{{testSenderId}}"
+}
+
+###
+
+### ===========================================
+### 8. 성능 테스트용 (동일 알림 여러 번)
+### ===========================================
+
+### 8-1. 성능 테스트 1
+POST {{chatServiceDirect}}/notifications/feed/like
+Content-Type: application/json
+
+{
+  "authorId": "{{testUserId}}",
+  "feedId": 801,
+  "relatedUrl": "/feed/801",
+  "senderId": "perf_test_001",
+  "senderProfileImage": "https://example.com/perf1.jpg"
+}
+
+###
+
+### 8-2. 성능 테스트 2
+POST {{chatServiceDirect}}/notifications/feed/like
+Content-Type: application/json
+
+{
+  "authorId": "{{testUserId}}",
+  "feedId": 802,
+  "relatedUrl": "/feed/802",
+  "senderId": "perf_test_002",
+  "senderProfileImage": "https://example.com/perf2.jpg"
+}
+
+###
+
+### 8-3. 성능 테스트 3
+POST {{chatServiceDirect}}/notifications/feed/like
+Content-Type: application/json
+
+{
+  "authorId": "{{testUserId}}",
+  "feedId": 803,
+  "relatedUrl": "/feed/803",
+  "senderId": "perf_test_003",
+  "senderProfileImage": "https://example.com/perf3.jpg"
+}
+
+###
+
+### ===========================================
+### 9. 특수 문자 및 긴 텍스트 테스트
+### ===========================================
+
+### 9-1. 특수 문자 포함 알림
+POST {{chatServiceDirect}}/notifications
+Content-Type: application/json
+
+{
+  "userId": "{{testUserId}}",
+  "type": "SPECIAL_CHAR",
+  "title": "🎉🎊 축하합니다! 🌟✨",
+  "message": "회원님의 여행기가 '올해의 베스트 후기'로 선정되었습니다! 🏆👏",
+  "relatedType": "AWARD",
+  "relatedUrl": "/awards/best-review-2025",
+  "senderId": "SYSTEM"
+}
+
+###
+
+### 9-2. 긴 텍스트 알림
+POST {{chatServiceDirect}}/notifications
+Content-Type: application/json
+
+{
+  "userId": "{{testUserId}}",
+  "type": "LONG_TEXT",
+  "title": "길고 상세한 공지사항",
+  "message": "안녕하세요, 지구방방 서비스를 이용해주시는 모든 회원님들께 감사드립니다. 더 나은 서비스 제공을 위해 다음 주 월요일부터 금요일까지 시스템 업그레이드를 진행할 예정입니다. 업그레이드 기간 중에는 일부 기능이 제한될 수 있으니 양해 부탁드립니다.",
+  "relatedType": "MAINTENANCE",
+  "relatedUrl": "/announcements/system-upgrade-2025",
+  "senderId": "SYSTEM"
+}
+
+###
