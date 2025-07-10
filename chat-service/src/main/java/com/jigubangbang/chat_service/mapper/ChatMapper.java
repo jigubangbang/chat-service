@@ -15,6 +15,7 @@ public interface ChatMapper {
 
     // 채팅방 입장
     ChatRoomDto getChatRoomInfo(Long chatId);
+    ChatGroupDto getChatGroupMemberWithNickname(Long chatId, String userId);
     ChatGroupDto getChatGroupMember(Long chatId, String userId);
     void insertGroupMember(ChatGroupDto dto);
     

@@ -15,6 +15,7 @@ public class ChatMsgDto {
     private Long id;
     private Long chatId;
     private String senderId;
+    private String nickname;
     private String message; 
     private LocalDateTime createdAt;
 }

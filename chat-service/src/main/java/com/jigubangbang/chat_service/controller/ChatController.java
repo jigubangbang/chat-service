@@ -65,12 +65,14 @@ public class ChatController {
     // 채팅 참여자 강제 탈퇴
     @DeleteMapping("/{chatId}/members/{userId}")
     public ResponseEntity<Void> removeGroupMember(@PathVariable Long chatId, @PathVariable String userId, @RequestHeader("User-Id") String creatorId) {
+        String userNickname = chatService.getUserNickname(chatId, userId);
         chatService.removeGroupMember(chatId, userId, creatorId);
 
         ChatMsgResponseDto leaveMessage = new ChatMsgResponseDto();
         leaveMessage.setChatId(chatId);
         leaveMessage.setSenderId("System");
-        leaveMessage.setMessage( userId+ " 님이 강제 퇴장당했습니다.");
+        leaveMessage.setNickname("System");
+        leaveMessage.setMessage( userNickname+ " 님이 강제 퇴장당했습니다.");
         leaveMessage.setType("LEAVE");
         leaveMessage.setCreatedAt(LocalDateTime.now());
         
@@ -79,6 +81,7 @@ public class ChatController {
         ChatMsgResponseDto kickMessage = new ChatMsgResponseDto();
         kickMessage.setChatId(chatId);
         kickMessage.setSenderId("System");
+        leaveMessage.setNickname("System");
         kickMessage.setMessage("운영진에 의해 강제 퇴장 처리되었습니다.");
         kickMessage.setType("KICK");
         kickMessage.setCreatedAt(LocalDateTime.now());
@@ -93,13 +96,14 @@ public class ChatController {
     // 그룹 탈퇴하기
     @DeleteMapping("/{chatId}/members/me")
     public ResponseEntity<Void> leaveGroupMember(@PathVariable Long chatId, @RequestHeader("User-Id") String userId) {
+        String userNickname = chatService.getUserNickname(chatId, userId);
         chatService.leaveGroupMember(chatId, userId);
-        System.out.println( "chatId: " + chatId + " userId: " + userId + " 탈퇴");
 
         ChatMsgResponseDto leaveMessage = new ChatMsgResponseDto();
         leaveMessage.setChatId(chatId);
         leaveMessage.setSenderId("System");
-        leaveMessage.setMessage( userId+ " 님이 그룹을 탈퇴했습니다.");
+        leaveMessage.setNickname("System");
+        leaveMessage.setMessage( userNickname+ " 님이 그룹을 탈퇴했습니다.");
         leaveMessage.setType("LEAVE");
         leaveMessage.setCreatedAt(LocalDateTime.now());
         
@@ -110,14 +114,38 @@ public class ChatController {
     // 회원 운영진 승격
     @PostMapping("/{chatId}/promote/{userId}")
     public ResponseEntity<Void> promoteToAdmin(@PathVariable Long chatId, @PathVariable String userId) {
+        String userNickname = chatService.getUserNickname(chatId, userId);
         chatService.promoteToAdmin(chatId, userId);
+
+        ChatMsgResponseDto promoteMessage = new ChatMsgResponseDto();
+        promoteMessage.setChatId(chatId);
+        promoteMessage.setSenderId("System");
+        promoteMessage.setNickname("System");
+        promoteMessage.setMessage(userNickname + " 님이 운영진으로 승격되었습니다.");
+        promoteMessage.setType("SYSTEM");
+        promoteMessage.setCreatedAt(LocalDateTime.now());
+        
+        messagingTemplate.convertAndSend("/topic/chat/" + chatId, promoteMessage);
+
         return ResponseEntity.ok().build();
     }
 
     // 운영진 제외
     @PostMapping("/{chatId}/demote/{userId}")
     public ResponseEntity<Void> demoteAdmin(@PathVariable Long chatId, @PathVariable String userId) {
+        String userNickname = chatService.getUserNickname(chatId, userId);
         chatService.demoteAdmin(chatId, userId);
+
+        ChatMsgResponseDto demoteMessage = new ChatMsgResponseDto();
+        demoteMessage.setChatId(chatId);
+        demoteMessage.setSenderId("System");
+        demoteMessage.setNickname("System");
+        demoteMessage.setMessage(userNickname + " 님의 운영진 권한이 해제되었습니다.");
+        demoteMessage.setType("SYSTEM");
+        demoteMessage.setCreatedAt(LocalDateTime.now());
+        
+        messagingTemplate.convertAndSend("/topic/chat/" + chatId, demoteMessage);
+
         return ResponseEntity.ok().build();
     }
 

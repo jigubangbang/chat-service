@@ -22,7 +22,7 @@ import java.util.Map;
 public class ChatService {
     
     private final ChatMapper chatMapper;
-
+    
     // 채팅방 입장
     @Transactional
     public ChatGroupDto joinChatRoom(Long chatId, String userId) {
@@ -30,36 +30,12 @@ public class ChatService {
         if (chatRoomInfo == null) {
             throw new IllegalArgumentException("채팅방을 찾을 수 없습니다: " + chatId);
         }
-        String groupType = chatRoomInfo.getGroupType();
-        String groupId = chatRoomInfo.getGroupId();
-        System.out.println(groupType + groupId);
-
         // 이미 참여중인지 확인
-        ChatGroupDto existingMember = chatMapper.getChatGroupMember(chatId, userId);
-        if (existingMember != null) {
-            return existingMember; // 이미 참여중이면 기존 정보 반환
+        ChatGroupDto existingMember = chatMapper.getChatGroupMemberWithNickname(chatId, userId);
+        if (existingMember == null) {
+            throw new IllegalArgumentException("해당 그룹의 멤버가 아닙니다. 먼저 그룹에 가입해주세요.");
         }
-        // 사용자 정보 검증 (user-service 연동)
-        /* 
-        try {
-            UserServiceClient.getUserById(userId);
-        } catch (Exception e) {
-            throw new IllegalArgumentException("유효하지 않은 사용자입니다: " + userId);
-        }
-        */
-        // 채팅방 멤버로 등록
-        int isCreator = 0;
-
-        // 채팅방 멤버로 추가
-        ChatGroupDto newMember = new ChatGroupDto();
-        newMember.setGroupType(groupType);
-        newMember.setGroupId(Integer.parseInt(groupId));
-        newMember.setUserId(userId);
-        newMember.setIsCreator(isCreator);
-        
-        chatMapper.insertGroupMember(newMember);
-        
-        return chatMapper.getChatGroupMember(chatId, userId);
+        return existingMember;
     }
 
     // 채팅방 정보 조회
@@ -80,6 +56,23 @@ public class ChatService {
     public List<ChatMsgDto> getRecentChatMessages(Long chatId, LocalDateTime since) {
         return chatMapper.getRecChatMessages(chatId, since);
     }
+
+    // 닉네임 받아오기
+    public String getUserNickname(Long chatId, String userId) {
+        try {
+            ChatGroupDto member = chatMapper.getChatGroupMemberWithNickname(chatId, userId);
+            return member != null ? member.getNickname() : userId; // 닉네임이 없으면 userId 반환
+        } catch (Exception e) {
+            System.err.println("닉네임 조회 실패: " + e.getMessage());
+            return userId; // 실패 시 userId 반환
+        }
+    }
+
+    // 채팅 메세지 전송
+    public void sendMessage(ChatMsgDto dto) {
+        chatMapper.insertMessage(dto);
+    }
+
 
     // 채팅 참여자 강제 탈퇴
     @Transactional

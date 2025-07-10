@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 public class ChatMsgResponseDto {
     private Long chatId;
     private String senderId;
+    private String nickname;
     private String message;
     private String type; // "ENTER", "TALK", "LEAVE"
     private LocalDateTime createdAt;
