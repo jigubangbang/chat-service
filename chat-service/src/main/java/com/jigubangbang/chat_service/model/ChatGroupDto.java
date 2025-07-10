@@ -8,6 +8,7 @@ public class ChatGroupDto {
     private String groupType;
     private int groupId;
     private String userId;
+    private String nickname;
     private String joinedAt;
     private int isCreator;
 }

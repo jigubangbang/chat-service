@@ -16,6 +16,7 @@
       <result property="groupType" column="group_type"/>
       <result property="groupId" column="group_id"/>
       <result property="userId" column="user_id"/>
+      <result property="nickname" column="nickname"/>
       <result property="joinedAt" column="joined_at"/>
       <result property="isCreator" column="is_creator"/>
    </resultMap>
@@ -26,6 +27,14 @@
       WHERE id = #{chatId}
   </select>
 
+  <select id="getChatGroupMemberWithNickname" resultMap="chatGroupResultMap">
+      SELECT gu.id, gu.group_type, gu.group_id, gu.user_id, u.nickname, gu.joined_at, gu.is_creator
+        FROM chat_room cr
+            JOIN group_user gu ON cr.group_type = gu.group_type AND cr.group_id = gu.group_id
+            JOIN user u ON gu.user_id = u.user_id
+        WHERE cr.id = #{chatId} AND gu.user_id = #{userId}
+  </select>
+
   <select id="getChatGroupMember" resultMap="chatGroupResultMap">
       SELECT gu.id, gu.group_type, gu.group_id, gu.user_id, gu.joined_at, gu.is_creator
         FROM chat_room cr
@@ -34,16 +43,19 @@
   </select>
 
   <select id="getChatGroupMembers" resultMap="chatGroupResultMap">
-      SELECT gu.id, gu.group_type, gu.group_id, gu.user_id, gu.joined_at, gu.is_creator
+      SELECT gu.id, gu.group_type, gu.group_id, gu.user_id, u.nickname, gu.joined_at, gu.is_creator
         FROM chat_room cr
             JOIN group_user gu ON cr.group_type = gu.group_type AND cr.group_id = gu.group_id
+            JOIN user u ON gu.user_id = u.user_id
         WHERE cr.id = #{chatId}
   </select>
 
+  <!--
   <insert id="insertGroupMember" parameterType="com.jigubangbang.chat_service.model.ChatGroupDto" useGeneratedKeys="true" keyProperty="id">
       INSERT INTO group_user (group_type, group_id, user_id, is_creator)
       VALUES (#{groupType}, #{groupId}, #{userId}, #{isCreator})
   </insert>
+  -->
 
   <delete id="removeGroupMemberByCreator" parameterType="map"> 
       DELETE FROM group_user
