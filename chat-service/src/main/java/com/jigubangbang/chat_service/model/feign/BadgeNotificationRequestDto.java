@@ -17,6 +17,7 @@ public class BadgeNotificationRequestDto {
     private int badgeId;
     private String relatedUrl;
     private String senderId;
+    private String nickname;
     private String senderProfileImage;
 
 }

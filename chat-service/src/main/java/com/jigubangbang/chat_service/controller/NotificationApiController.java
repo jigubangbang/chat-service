@@ -57,6 +57,7 @@ public class NotificationApiController {
                 request.getFeedId(),         // feed? user? : 이게 피드 관련이 아니면 UserNotificationRequestDto 새로 생성하여서 이 줄 없애기
                 request.getRelatedUrl(),
                 request.getSenderId(),
+                request.getNickname(),
                 request.getSenderProfileImage()
             );
             return ResponseEntity.ok(Map.of("success", true));
@@ -75,6 +76,7 @@ public class NotificationApiController {
                 request.getFeedId(),       
                 request.getRelatedUrl(),
                 request.getSenderId(),
+                request.getNickname(),
                 request.getSenderProfileImage()
             );
             return ResponseEntity.ok(Map.of("success", true));
@@ -93,6 +95,7 @@ public class NotificationApiController {
                 request.getFeedId(),    
                 request.getRelatedUrl(),
                 request.getSenderId(),
+                request.getNickname(),
                 request.getSenderProfileImage()
             );
             return ResponseEntity.ok(Map.of("success", true));
@@ -115,6 +118,7 @@ public class NotificationApiController {
                 request.getPostId(),
                 request.getRelatedUrl(),
                 request.getSenderId(),
+                request.getNickname(),
                 request.getSenderProfileImage()
             );
             return ResponseEntity.ok(Map.of("success", true));
@@ -149,6 +153,7 @@ public class NotificationApiController {
                 request.getGroupName(),
                 request.getGroupId(),      
                 request.getRelatedUrl(),
+                request.getNickname(),
                 request.getApplicantId()        // 신청자가
             );
             return ResponseEntity.ok(Map.of("success", true));
@@ -162,12 +167,12 @@ public class NotificationApiController {
     // 그룹 가입 알림
     @PostMapping("/travelgroup/applications/{applicantId}")
     public ResponseEntity<Map<String, Object>> createGroupAcceptedNotification(@RequestBody GroupAcceptedNotificationRequestDto request) {
-        // PathVariable로 받아서 넣어도 될 듯
         try {
             notificationService.createGroupAccepted(
                 request.getApplicantId(),       // 신청자에게
                 request.getGroupName(),
-                request.getGroupId(),       
+                request.getGroupId(),
+                request.getNickname(),     
                 request.getRelatedUrl(),
                 request.getCreatorId()          // 방장? system?
             );
@@ -189,6 +194,7 @@ public class NotificationApiController {
                 request.getBadgeId(),           // 뱃지 ID
                 request.getRelatedUrl(),        // 뱃지 상세 페이지 또는 퀘스트 페이지
                 request.getSenderId(),          // 시스템
+                request.getNickname(),
                 request.getSenderProfileImage()
             );
             return ResponseEntity.ok(Map.of("success", true, "message", "뱃지 획득 알림이 생성되었습니다."));
@@ -210,6 +216,7 @@ public class NotificationApiController {
                 request.getBadgeId(),           // 뱃지 ID
                 request.getRelatedUrl(),        // 관련 페이지
                 request.getSenderId(),          // 관리자 또는 시스템
+                request.getNickname(),
                 request.getSenderProfileImage()
             );
             return ResponseEntity.ok(Map.of("success", true, "message", "뱃지 수거 알림이 생성되었습니다."));
@@ -228,7 +235,8 @@ public class NotificationApiController {
                 request.getTitle(),
                 request.getMessage(),
                 request.getRelatedUrl(),
-                request.getSenderId()
+                request.getSenderId(),
+                request.getNickname()
             );
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {

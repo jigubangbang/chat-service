@@ -15,6 +15,7 @@ public class FeedNotificationRequestDto {
     private int feedId;                     //relatedId
     private String relatedUrl;
     private String senderId;
+    private String nickname;
     private String senderProfileImage;
 
 }
