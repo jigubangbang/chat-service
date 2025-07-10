@@ -27,7 +27,7 @@ public class NotificationController {
     // 7일 이내 전체 알림 조회
     @GetMapping("/all")
     public ResponseEntity<List<NotificationDto>> getAllNotifications(@RequestHeader("User-Id") String userId, 
-            @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "7") int size, @RequestParam(defaultValue = "7") int days) {
+            @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "5") int size, @RequestParam(defaultValue = "0") int days) {
         List<NotificationDto> notifications = notificationService.getAllNotifications(userId, page, size, days);
         return ResponseEntity.ok(notifications);
     }

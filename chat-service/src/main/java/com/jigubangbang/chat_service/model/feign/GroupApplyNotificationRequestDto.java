@@ -10,11 +10,10 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class GroupApplyNotificationRequestDto {
-    
     private String creatorId;
     private String groupName;               //title
     private int groupId;                    //relatedId
     private String relatedUrl;
     private String applicantId;
-
+    private String nickname;
 }

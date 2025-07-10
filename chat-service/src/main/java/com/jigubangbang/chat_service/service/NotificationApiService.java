@@ -38,14 +38,14 @@ public class NotificationApiService {
     // FEED_SERVICE
     @Transactional
     public void createFollowNotification(String authorId, int relatedId, String relatedUrl, 
-            String senderId, String senderProfileImage) {
+            String senderId, String nickname, String senderProfileImage) {
         if (authorId.equals(senderId)) return;  // 자기 자신을 팔로우 X
     
         NotificationDto notification = NotificationDto.builder()
             .userId(authorId)
             .type("FOLLOW")
             .title("새 팔로워")
-            .message(senderId + "님이 회원님을 팔로우했습니다.")
+            .message(nickname + "(" + senderId + ")" + "님이 회원님을 팔로우했습니다.")
             .relatedId(relatedId)
             .relatedType("USER")
             .relatedUrl(relatedUrl)
@@ -59,14 +59,14 @@ public class NotificationApiService {
 
     @Transactional
     public void createFeedComment(String authorId, int relatedId, String relatedUrl, 
-            String senderId, String senderProfileImage) {
+            String senderId, String nickname, String senderProfileImage) {
         if (authorId.equals(senderId)) return;  // 자신의 댓글 알림 X
         
         NotificationDto notification = NotificationDto.builder()
             .userId(authorId)
             .type("FEED_COMMENTED")
             .title("새 댓글")
-            .message(senderId + "님이 회원님의 피드에 댓글을 남겼습니다.")
+            .message(nickname + "(" + senderId + ")" + "님이 회원님의 피드에 댓글을 남겼습니다.")
             .relatedId(relatedId)
             .relatedType("FEED")
             .relatedUrl(relatedUrl)
@@ -80,14 +80,14 @@ public class NotificationApiService {
 
     @Transactional
     public void createFeedLike(String authorId, int relatedId, String relatedUrl, 
-            String senderId, String senderProfileImage) {
+            String senderId, String nickname, String senderProfileImage) {
         if (authorId.equals(senderId)) return;
 
         NotificationDto notification = NotificationDto.builder()
             .userId(authorId)
             .type("FEED_LIKED")
             .title("피드 좋아요")
-            .message(senderId + "님이 회원님의 피드에 좋아요를 눌렀습니다.")
+            .message(nickname + "(" + senderId + ")" + "님이 회원님의 피드에 좋아요를 눌렀습니다.")
             .relatedId(relatedId)
             .relatedType("FEED")
             .relatedUrl(relatedUrl)
@@ -102,14 +102,14 @@ public class NotificationApiService {
     // COM_SERVICE
     @Transactional
     public void createPostComment(String authorId, int relatedId, String relatedUrl, 
-            String senderId, String senderProfileImage) {
+            String senderId, String nickname, String senderProfileImage) {
         if (authorId.equals(senderId)) return;  // 자신의 댓글 알림 X
 
         NotificationDto notification = NotificationDto.builder()
             .userId(authorId)
             .type("COM_COMMENTED")
             .title("새 댓글")
-            .message(senderId + "님이 회원님의 커뮤니티 게시글에 댓글을 남겼습니다.")
+            .message(nickname + "(" + senderId + ")" + "님이 회원님의 커뮤니티 게시글에 댓글을 남겼습니다.")
             .relatedId(relatedId)
             .relatedType("COMMUNITY")
             .relatedUrl(relatedUrl)
@@ -144,12 +144,12 @@ public class NotificationApiService {
 
     @Transactional
     public void createNewApplicant(String creatorId, String groupName, int groupId,
-            String relatedUrl, String applicantId) {
+            String relatedUrl, String applicantId, String nickname) {
         NotificationDto notification = NotificationDto.builder()
             .userId(creatorId)
             .type("GROUP_NEW_APPLICANT")
             .title("새 모임 신청")
-            .message(applicantId + "님이 '" + groupName + "' 모임에 참가 신청했습니다.")
+            .message(nickname + "(" + applicantId + ") 님이 '" + groupName + "' 모임에 참가 신청했습니다.")
             .relatedId(groupId)
             .relatedType("GROUP")
             .relatedUrl(relatedUrl)
@@ -162,7 +162,7 @@ public class NotificationApiService {
     
     @Transactional
     public void createGroupAccepted(String applicantId, String groupName, int groupId,
-            String relatedUrl, String creatorId) {
+            String relatedUrl, String creatorId, String nickname) {
         NotificationDto notification = NotificationDto.builder()
             .userId(applicantId)
             .type("GROUP_ACCEPTED")
@@ -179,7 +179,7 @@ public class NotificationApiService {
     }
 
     @Transactional
-    public void createInquiryAnswered(String userId, String title, String message, String relatedUrl, String senderId) {
+    public void createInquiryAnswered(String userId, String title, String message, String relatedUrl, String senderId, String nickname) {
         NotificationDto notification = NotificationDto.builder()
             .userId(userId)
             .type("INQUIRY_ANSWERED")
@@ -196,7 +196,7 @@ public class NotificationApiService {
 
     @Transactional
     public void createBadgeEarned(String userId, String badgeName, int badgeId, 
-            String relatedUrl, String senderId, String senderProfileImage) {
+            String relatedUrl, String senderId, String nickname, String senderProfileImage) {
         NotificationDto notification = NotificationDto.builder()
             .userId(userId)
             .type("BADGE_EARNED")
@@ -215,7 +215,7 @@ public class NotificationApiService {
 
     @Transactional
     public void createBadgeRevoked(String userId, String badgeName, String message, int badgeId, 
-            String relatedUrl, String senderId, String senderProfileImage) {
+            String relatedUrl, String senderId, String nickname, String senderProfileImage) {
         NotificationDto notification = NotificationDto.builder()
             .userId(userId)
             .type("BADGE_REVOKED")

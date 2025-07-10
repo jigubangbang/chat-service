@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import com.jigubangbang.chat_service.model.NotificationDto;
 
@@ -13,16 +14,16 @@ public interface NotificationMapper {
     
     void insertNotification(NotificationDto notification);
 
-    List<NotificationDto> findUnreadNotifications(String userId, int limit);
-    List<NotificationDto> findAllNotifications(String userId, int limit, int offset);
-    List<NotificationDto> findNotificationsSince(String userId, int limit, int offset, LocalDateTime since);
+    List<NotificationDto> findUnreadNotifications(@Param("userId") String userId, @Param("limit") int limit);
+    List<NotificationDto> findAllNotifications(@Param("userId") String userId, @Param("limit") int limit, @Param("offset") int offset);
+    List<NotificationDto> findNotificationsSince(@Param("userId") String userId, @Param("limit") int limit, @Param("offset") int offset, @Param("since") LocalDateTime since);
     int countUnreadNotifications(String userId);
     
-    void markAsRead(Long id, String userId, LocalDateTime readAt);
+    void markAsRead(@Param("id") Long id, @Param("userId") String userId, @Param("readAt") LocalDateTime readAt);
     
-    void markAllAsRead(String userId, LocalDateTime readAt);
+    void markAllAsRead(@Param("userId")String userId, @Param("readAt") LocalDateTime readAt);
     
-    void deleteNotification(Long id, String userId);
+    void deleteNotification(@Param("id")Long id, @Param("userId") String userId);
     
     Map<String, Boolean> findNotificationSettings(String userId);
     

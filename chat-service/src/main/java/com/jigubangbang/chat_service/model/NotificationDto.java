@@ -2,6 +2,8 @@ package com.jigubangbang.chat_service.model;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -27,6 +29,7 @@ public class NotificationDto {
     private String senderId;
     private String senderProfileImage;
 
+    @JsonProperty("isRead")
     private boolean isRead;
     private LocalDateTime readAt;
     private LocalDateTime createdAt;

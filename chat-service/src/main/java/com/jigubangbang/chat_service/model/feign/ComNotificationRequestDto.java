@@ -15,6 +15,7 @@ public class ComNotificationRequestDto {
     private int postId;                     //relatedId
     private String relatedUrl;
     private String senderId;
+    private String nickname;
     private String senderProfileImage;
     
 }
