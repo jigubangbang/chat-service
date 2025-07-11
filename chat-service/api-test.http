@@ -12,7 +12,7 @@ Content-Type: application/json
 
 {
   "userId": "seolylee",
-  "type": "GENERAL",
+  "type": "INQUIRY_ANSWERED",
   "title": "테스트 알림",
   "message": "이것은 테스트 알림입니다.",
   "relatedType": "TEST",
