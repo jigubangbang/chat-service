@@ -187,6 +187,7 @@ public class NotificationApiService {
             .type("INQUIRY_ANSWERED")
             .title("문의 답변")
             .message(message)
+            .relatedId(0)
             .relatedType("INQUIRY")
             .relatedUrl(relatedUrl)
             .senderId(senderId)
