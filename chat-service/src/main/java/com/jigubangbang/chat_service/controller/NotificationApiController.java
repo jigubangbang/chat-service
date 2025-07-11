@@ -232,11 +232,9 @@ public class NotificationApiController {
         try {
             notificationService.createInquiryAnswered(
                 request.getUserId(),
-                request.getTitle(),
                 request.getMessage(),
                 request.getRelatedUrl(),
-                request.getSenderId(),
-                request.getNickname()
+                request.getSenderId()
             );
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {

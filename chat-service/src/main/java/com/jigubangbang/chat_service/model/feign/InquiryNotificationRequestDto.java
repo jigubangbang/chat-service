@@ -11,9 +11,7 @@ import lombok.Setter;
 @AllArgsConstructor
 public class InquiryNotificationRequestDto {
     private String userId;
-    private String title; 
     private String message;
     private String relatedUrl;
     private String senderId;
-    private String nickname;
 }

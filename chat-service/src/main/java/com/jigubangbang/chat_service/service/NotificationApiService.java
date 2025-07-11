@@ -179,11 +179,11 @@ public class NotificationApiService {
     }
 
     @Transactional
-    public void createInquiryAnswered(String userId, String title, String message, String relatedUrl, String senderId, String nickname) {
+    public void createInquiryAnswered(String userId, String message, String relatedUrl, String senderId) {
         NotificationDto notification = NotificationDto.builder()
             .userId(userId)
             .type("INQUIRY_ANSWERED")
-            .title(title)
+            .title("문의 답변")
             .message(message)
             .relatedType("INQUIRY")
             .relatedUrl(relatedUrl)
