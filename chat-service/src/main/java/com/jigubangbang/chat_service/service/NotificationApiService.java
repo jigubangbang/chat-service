@@ -154,6 +154,7 @@ public class NotificationApiService {
             .relatedType("GROUP")
             .relatedUrl(relatedUrl)
             .senderId(applicantId)
+            .senderProfileImage(null)
             .build();
             
         notificationMapper.insertNotification(notification);
@@ -172,6 +173,7 @@ public class NotificationApiService {
             .relatedType("GROUP")
             .relatedUrl(relatedUrl)
             .senderId(creatorId)
+            .senderProfileImage(null)
             .build();
             
         notificationMapper.insertNotification(notification);
@@ -188,6 +190,7 @@ public class NotificationApiService {
             .relatedType("INQUIRY")
             .relatedUrl(relatedUrl)
             .senderId(senderId)
+            .senderProfileImage(null)
             .build();
             
         notificationMapper.insertNotification(notification);
