@@ -227,7 +227,7 @@ public class NotificationApiController {
     }
 
     // 1:1 문의 답변/처리 알림
-    @PostMapping("/inqury")
+    @PostMapping("/inquiry")
     public ResponseEntity<Map<String, Object>> createInquiryAnsweredNotification(@RequestBody InquiryNotificationRequestDto request) {
         try {
             notificationService.createInquiryAnswered(
