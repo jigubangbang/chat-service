@@ -204,29 +204,27 @@ Content-Type: application/json
 ### ===========================================
 
 ### 5-1. 1:1 문의 답변 알림
-POST {{testGateway}}/notifications/inqury
+POST {{testGateway}}/notifications/inquiry
 Content-Type: application/json
 
 {
-  "userId": "{{testUserId}}",
-  "title": "문의 답변이 등록되었습니다",
+  "userId": "seolylee",
   "message": "결제 관련 문의에 대한 답변이 등록되었습니다. 확인해 주세요.",
   "relatedUrl": "/inquiries/501",
-  "senderId": "aaa"
+  "senderId": "pnhmms2"
 }
 
 ###
 
 ### 5-2. 문의 답변 알림 (Gateway)
-POST {{testGateway}}/notifications/inqury
+POST {{testGateway}}/notifications/inquiry
 Content-Type: application/json
 
 {
-  "userId": "{{testUserId}}",
-  "title": "기술 지원 답변 완료",
+  "userId": "pnhmms2",
   "message": "앱 오류 문제에 대한 해결책을 안내드렸습니다.",
   "relatedUrl": "/inquiries/502",
-  "senderId": "aaa"
+  "senderId": "pnhmms"
 }
 
 ###
