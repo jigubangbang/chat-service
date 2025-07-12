@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.jigubangbang.chat_service.model.NotificationDto;
 import com.jigubangbang.chat_service.model.feign.BadgeNotificationRequestDto;
+import com.jigubangbang.chat_service.model.feign.BlindNotificationRequestDto;
 import com.jigubangbang.chat_service.model.feign.ComNotificationRequestDto;
 import com.jigubangbang.chat_service.model.feign.FeedNotificationRequestDto;
 import com.jigubangbang.chat_service.model.feign.GroupAcceptedNotificationRequestDto;
@@ -243,6 +244,20 @@ public class NotificationApiController {
         }
     }
 
-    // 공지
-    
+    // 블라인드
+    @PostMapping("/notifications/blind")
+    public ResponseEntity<Map<String, Object>> createBlindNotification(@RequestBody BlindNotificationRequestDto request) {
+        try {
+            notificationService.createBlind(
+                request.getUserId(),
+                request.getMessage(),
+                request.getRelatedUrl(),
+                request.getSenderId()
+            );
+            return ResponseEntity.ok(Map.of("success", true));
+        } catch (Exception e) {
+            System.out.println("[NotificationAPI] 블라인드 처리 알림 생성 실패: " + e.getMessage());
+            return ResponseEntity.status(500).body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
 }

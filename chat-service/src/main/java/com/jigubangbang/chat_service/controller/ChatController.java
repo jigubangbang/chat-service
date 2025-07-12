@@ -44,7 +44,7 @@ public class ChatController {
 
     // 채팅방 정보 조회
     @GetMapping("{chatId}/info")
-    public ResponseEntity<ChatRoomDto> getChatRoomInfor(@PathVariable Long chatId) {
+    public ResponseEntity<ChatRoomDto> getChatRoomInfo(@PathVariable Long chatId) {
         ChatRoomDto InfoDto = chatService.getChatRoomInfo(chatId);
         return ResponseEntity.ok(InfoDto);
     }
