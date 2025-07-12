@@ -199,6 +199,24 @@ public class NotificationApiService {
     }
 
     @Transactional
+    public void createBlind(String userId, String message, String relatedUrl, String senderId) {
+        NotificationDto notification = NotificationDto.builder()
+            .userId(userId)
+            .type("BLIND_NOTIFICATION")
+            .title("블라인드 처리")
+            .message(message)
+            .relatedId(0)
+            .relatedType("BLIND")
+            .relatedUrl(relatedUrl)
+            .senderId(senderId)
+            .senderProfileImage(null)
+            .build();
+            
+        notificationMapper.insertNotification(notification);
+        System.out.println("문의 답변 알림 생성: " + userId);
+    }
+
+    @Transactional
     public void createBadgeEarned(String userId, String badgeName, int badgeId, 
             String relatedUrl, String senderId, String nickname, String senderProfileImage) {
         NotificationDto notification = NotificationDto.builder()
