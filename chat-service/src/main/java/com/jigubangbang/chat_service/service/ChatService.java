@@ -47,6 +47,22 @@ public class ChatService {
         return chatMapper.getChatGroupMembers(chatId);
     }
 
+    // 최초 생성자 찾기 (신고용)
+    public String findOriginalCreator(Long chatId) {
+        List<ChatGroupDto> creators = chatMapper.getChatGroupCreators(chatId);
+        
+        if (creators.isEmpty()) {
+            throw new IllegalArgumentException("채팅방의 생성자를 찾을 수 없습니다: " + chatId);
+        }
+        
+        // joinedAt 기준으로 가장 이른 생성자 찾기
+        ChatGroupDto originalCreator = creators.stream()
+            .min((a, b) -> a.getJoinedAt().compareTo(b.getJoinedAt()))
+            .orElseThrow(() -> new IllegalArgumentException("최초 생성자를 찾을 수 없습니다."));
+        
+        return originalCreator.getUserId();
+    }
+
     // 채팅 메세지 조회
     public List<ChatMsgDto> getChatMessages(Long chatId) {
         return chatMapper.getChatMessages(chatId);

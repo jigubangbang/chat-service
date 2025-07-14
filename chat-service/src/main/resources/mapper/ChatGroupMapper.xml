@@ -51,6 +51,16 @@
         WHERE cr.id = #{chatId}
   </select>
 
+<select id="getChatGroupCreators" parameterType="Long" resultMap="chatGroupResultMap">
+    SELECT gu.id, gu.group_type, gu.group_id, gu.user_id, u.nickname, u.profile_image, gu.joined_at, gu.is_creator
+    FROM chat_room cr
+        JOIN group_user gu ON cr.group_type = gu.group_type AND cr.group_id = gu.group_id
+        JOIN user u ON gu.user_id = u.user_id
+      WHERE cr.id = #{chatId} 
+          AND gu.is_creator = 1
+      ORDER BY gu.joined_at ASC
+</select>
+
   <delete id="removeGroupMemberByCreator" parameterType="map"> 
       DELETE FROM group_user
         WHERE group_id = (SELECT group_id FROM chat_room WHERE id = #{chatId})
