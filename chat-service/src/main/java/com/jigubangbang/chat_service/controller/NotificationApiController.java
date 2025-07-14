@@ -245,7 +245,7 @@ public class NotificationApiController {
     }
 
     // 블라인드
-    @PostMapping("/notifications/blind")
+    @PostMapping("/blind")
     public ResponseEntity<Map<String, Object>> createBlindNotification(@RequestBody BlindNotificationRequestDto request) {
         try {
             notificationService.createBlind(
