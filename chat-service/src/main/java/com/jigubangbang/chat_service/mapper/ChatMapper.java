@@ -26,6 +26,9 @@ public interface ChatMapper {
     // 현 채팅방 멤버 조회
     List<ChatGroupDto> getChatGroupMembers(Long chatId);
     
+    // 최초 생성자 조회
+    List<ChatGroupDto> getChatGroupCreators(Long chatId);
+    
     // 채팅 메세지 전송
     void insertMessage(ChatMsgDto dto);
 

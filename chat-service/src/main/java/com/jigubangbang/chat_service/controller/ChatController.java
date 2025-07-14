@@ -55,12 +55,12 @@ public class ChatController {
         return ResponseEntity.ok(membersDto);
     }
 
-    /* messagingTemplate.convertAndSendToUser(
-            userId,
-            "/queue/kicked",
-            new KickMessage(chatId, "관리자에 의해 강퇴되었습니다.")
-        ); 
-    */
+    // 최초 생성자 조회
+    @GetMapping("/{chatId}/original-creator")
+    public ResponseEntity<String> getOriginalCreator(@PathVariable Long chatId) {
+        String originalCreatorId = chatService.findOriginalCreator(chatId);
+        return ResponseEntity.ok(originalCreatorId);
+    }
 
     // 채팅 참여자 강제 탈퇴
     @DeleteMapping("/{chatId}/members/{userId}")
@@ -156,6 +156,4 @@ public class ChatController {
         return ResponseEntity.ok("채팅방 설명이 수정되었습니다.");
     }
 
-    // 타 서비스와 연동 함수
-    // com-service
 }
