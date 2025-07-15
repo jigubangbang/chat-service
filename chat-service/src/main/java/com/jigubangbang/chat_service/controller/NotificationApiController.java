@@ -175,7 +175,7 @@ public class NotificationApiController {
                 request.getGroupId(),          
                 request.getRelatedUrl(),        
                 request.getCreatorId(),        
-                request.getNickname()  
+                request.getNickname()          
             );
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
