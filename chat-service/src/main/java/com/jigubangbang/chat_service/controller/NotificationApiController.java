@@ -166,16 +166,16 @@ public class NotificationApiController {
 
 
     // 그룹 가입 알림
-    @PostMapping("/travelgroup/applications/{applicantId}")
+    @PostMapping("/travelgroup/applications/accepted")
     public ResponseEntity<Map<String, Object>> createGroupAcceptedNotification(@RequestBody GroupAcceptedNotificationRequestDto request) {
         try {
             notificationService.createGroupAccepted(
-                request.getApplicantId(),       // 신청자에게
-                request.getGroupName(),
-                request.getGroupId(),
-                request.getNickname(),     
-                request.getRelatedUrl(),
-                request.getCreatorId()          // 방장? system?
+                request.getApplicantId(),       
+                request.getGroupName(),       
+                request.getGroupId(),          
+                request.getRelatedUrl(),        
+                request.getCreatorId(),        
+                request.getNickname()  
             );
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {

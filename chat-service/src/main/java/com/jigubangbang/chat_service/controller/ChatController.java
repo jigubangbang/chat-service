@@ -111,6 +111,34 @@ public class ChatController {
         return ResponseEntity.ok().build();
     }
 
+    // ChatController.java에 추가할 메서드
+
+    // 채팅방 삭제 (최초 생성자 또는 관리자만 가능)
+    @DeleteMapping("/{chatId}")
+    public ResponseEntity<Void> deleteChatRoom(@PathVariable Long chatId, @RequestHeader("User-Id") String userId) {
+        try {
+            chatService.deleteChatRoom(chatId, userId);
+            
+            // 채팅방 삭제 알림 메시지 전송
+            ChatMsgResponseDto deleteMessage = new ChatMsgResponseDto();
+            deleteMessage.setChatId(chatId);
+            deleteMessage.setSenderId("System");
+            deleteMessage.setNickname("System");
+            deleteMessage.setMessage("채팅방이 삭제되었습니다. 더 이상 이 채팅방은 사용할 수 없습니다");
+            deleteMessage.setType("ROOM_DELETE");
+            deleteMessage.setCreatedAt(LocalDateTime.now());
+            
+            // 모든 참여자에게 삭제 알림 전송
+            messagingTemplate.convertAndSend("/topic/chat/" + chatId, deleteMessage);
+            
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
     // 회원 운영진 승격
     @PostMapping("/{chatId}/promote/{userId}")
     public ResponseEntity<Void> promoteToAdmin(@PathVariable Long chatId, @PathVariable String userId) {

@@ -75,6 +75,25 @@
           AND user_id = #{userId}
   </delete>
 
+  <!-- 삭제할 멤버 ID들 조회 (Primary Key 수집) -->
+  <select id="getChatGroupMemberIds" parameterType="Long" resultType="Long">
+      SELECT gu.id
+      FROM group_user gu
+      INNER JOIN chat_room cr ON gu.group_type = cr.group_type AND gu.group_id = cr.group_id
+      WHERE cr.id = #{chatId}
+  </select>
+
+  <!-- Primary Key로 개별 삭제 (Safe Update Mode 문제 없음) -->
+  <delete id="deleteChatGroupMemberById" parameterType="Long">
+      DELETE FROM group_user WHERE id = #{id}
+  </delete>
+
+  <!-- 채팅방 정보 삭제 -->
+  <delete id="deleteChatRoom" parameterType="Long">
+      DELETE FROM chat_room 
+      WHERE id = #{chatId}
+  </delete>
+
   <update id="promoteToAdmin">
       UPDATE group_user SET is_creator = 1
         WHERE group_type = #{groupType}
