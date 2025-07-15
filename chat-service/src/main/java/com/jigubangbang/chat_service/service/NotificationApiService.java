@@ -242,7 +242,7 @@ public class NotificationApiService {
             .userId(userId)
             .type("BADGE_REVOKED")
             .title("뱃지 수거")
-            .message(message + "와 같은 사유로 " + badgeName + "을/를 회수하였습니다")
+            .message("제출하신 사진이 퀘스트와 불일치하여 " + badgeName + "을/를 회수하였습니다")
             .relatedId(badgeId)
             .relatedType("BADGE")
             .relatedUrl(relatedUrl)
