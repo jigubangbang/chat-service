@@ -114,8 +114,6 @@ public class ChatService {
             throw new IllegalArgumentException("자기 자신을 강제 탈퇴시킬 수 없습니다.");
         }
 
-        // 운영진은 내보낼 수 없게 만들어도 좋을듯
-
         chatMapper.removeGroupMemberByCreator(targetParam);
     }
 
@@ -131,15 +129,74 @@ public class ChatService {
     public void leaveGroupMember(Long chatId, String userId) {
 
         validateChatRoomMember(chatId, userId);
+
+        /* 
+        String originalCreator = findOriginalCreator(chatId);
+        if (originalCreator.equals(userId)) {
+            throw new IllegalArgumentException("최초 생성자는 채팅방을 나갈 수 없습니다.");
+        }
+        */
+        
         chatMapper.leaveGroupMemberByUser(chatId, userId);
         
-        // 채팅방에 남은 멤버가 없으면 채팅방 삭제 (선택사항)
+        // 채팅방에 남은 멤버 수 확인
         /* 
-        List<ChatRoomMemberDto> remainingMembers = chatMapper.getChatRoomMembersByChatId(chatId);
-        if (remainingMembers.isEmpty()) {
+        List<ChatGroupDto> remainingMembers = chatMapper.getChatGroupMembers(chatId);
+        if (remainingMembers.size() == 1) {
+            // 마지막 멤버(최초 생성자)만 남았으면 채팅방 삭제
             chatMapper.deleteChatRoom(chatId);
         }
         */
+    }
+
+    // ChatService.java에 추가할 메서드
+
+    // 채팅방 삭제 (최초 생성자 또는 관리자만 가능)
+    @Transactional
+    public void deleteChatRoom(Long chatId, String userId) {
+        // 채팅방 존재 확인
+        ChatRoomDto chatRoom = chatMapper.getChatRoomInfo(chatId);
+        if (chatRoom == null) {
+            throw new IllegalArgumentException("채팅방을 찾을 수 없습니다: " + chatId);
+        }
+        
+        // 사용자가 해당 채팅방의 멤버인지 확인
+        ChatGroupDto member = chatMapper.getChatGroupMember(chatId, userId);
+        if (member == null) {
+            throw new IllegalArgumentException("해당 채팅방의 멤버가 아닙니다.");
+        }
+        
+        // 권한 확인: 최초 생성자 또는 관리자 권한 확인
+        String originalCreator = findOriginalCreator(chatId);
+        boolean isOriginalCreator = originalCreator.equals(userId);
+        boolean isAdmin = member.getIsCreator() == 1; // 관리자 권한 확인
+        
+        if (!isOriginalCreator && !isAdmin) {
+            throw new IllegalArgumentException("채팅방 삭제 권한이 없습니다. 최초 생성자 또는 관리자만 삭제할 수 있습니다.");
+        }
+        
+        try {
+
+            // 채팅 메시지 삭제
+            chatMapper.deleteChatMessages(chatId);
+
+            // 채팅방 멤버 정보 삭제
+                // 삭제할 멤버 ID들 먼저 조회
+                List<Long> memberIds = chatMapper.getChatGroupMemberIds(chatId);
+                System.out.println("[DEBUG] 삭제할 멤버 수: " + memberIds.size());
+                // Primary Key로 개별 삭제
+                for (Long memberId : memberIds) {
+                    chatMapper.deleteChatGroupMemberById(memberId);
+                }
+            // 채팅방 정보 삭제
+            chatMapper.deleteChatRoom(chatId);
+            
+            System.out.println("채팅방 삭제 완료: chatId=" + chatId + ", deletedBy=" + userId);
+            
+        } catch (Exception e) {
+            System.err.println("채팅방 삭제 중 오류 발생: " + e.getMessage());
+            throw new RuntimeException("채팅방 삭제 중 오류가 발생했습니다.", e);
+        }
     }
 
     // 회원 운영진 승격

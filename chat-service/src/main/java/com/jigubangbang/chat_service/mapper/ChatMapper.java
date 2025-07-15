@@ -38,6 +38,12 @@ public interface ChatMapper {
     // 채팅방 나가기
     void leaveGroupMemberByUser(Long chatId, String userId);
 
+    // 채팅방 삭제
+    void deleteChatMessages(Long chatId);
+    List<Long> getChatGroupMemberIds(Long chatId);
+    void deleteChatGroupMemberById(Long id);
+    void deleteChatRoom(Long chatId);
+
     // 회원 운영진 승격
     void promoteToAdmin(String groupType, int groupId, String userId);
 
@@ -48,4 +54,3 @@ public interface ChatMapper {
     int saveDescription(ChatRoomDto chatRoomDto);
 
 }
- 
