@@ -154,8 +154,9 @@ public class NotificationApiController {
                 request.getGroupName(),
                 request.getGroupId(),      
                 request.getRelatedUrl(),
-                request.getNickname(),
-                request.getApplicantId()        // 신청자가
+                
+                request.getApplicantId() ,
+                request.getNickname()       // 신청자가
             );
             return ResponseEntity.ok(Map.of("success", true));
         } catch (Exception e) {
