@@ -138,13 +138,13 @@ public class ChatService {
         */
 
         //채팅방 유형 구하기
-        int travelmateId = chatMapper.getGroupIdByRoomId(chatId);
+        Integer travelmateId = chatMapper.getGroupIdByRoomId(chatId);
         
         //채팅방 나가기
         chatMapper.leaveGroupMemberByUser(chatId, userId);
 
         //travelmate application 삭제
-        if (travelmateId > 0){
+        if (travelmateId != null && travelmateId > 0){
             chatMapper.deleteTravelmateApplication(travelmateId);
         }
         
