@@ -8,4 +8,5 @@ public class ChatRoomDto {
     private String groupType;
     private String groupId;
     private String description;
+    private String groupName;
 }
