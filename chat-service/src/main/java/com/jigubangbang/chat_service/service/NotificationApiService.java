@@ -1,8 +1,5 @@
 package com.jigubangbang.chat_service.service;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -121,27 +118,6 @@ public class NotificationApiService {
         System.out.println("댓글 알림 생성: " + senderId + " -> " + authorId);
     }
 
-
-    /* 
-    @Transactional
-    public void createVoteExpired(String userId, Long voteId, String voteTitle) {
-        NotificationDto notification = NotificationDto.builder()
-            .userId(userId)
-            .type("VOTE_EXPIRED")
-            .title("투표 마감")
-            .message("'" + voteTitle + "' 투표가 마감되었습니다.")
-            .relatedId(voteId)
-            .relatedType("VOTE")
-            .relatedUrl("/votes/" + voteId + "/results")
-            .senderId("system")
-            .senderName("시스템")
-            .build();
-            
-        notificationMapper.insertNotification(notification);
-        System.out.println("투표 만료 알림 생성: " +  userId);
-    }
-    */
-
     @Transactional
     public void createNewApplicant(String creatorId, String groupName, int groupId,
             String relatedUrl, String applicantId, String nickname) {
@@ -178,6 +154,25 @@ public class NotificationApiService {
             
         notificationMapper.insertNotification(notification);
         System.out.println("모임 수락 알림 생성: " + creatorId + " -> " + applicantId);
+    }
+
+    @Transactional
+    public void createForcedRemoval(String userId, String groupName, int groupId,
+            String relatedUrl, String creatorId) {
+        NotificationDto notification = NotificationDto.builder()
+            .userId(userId)
+            .type("FORCED_REMOVAL")
+            .title("모임 강제 퇴장")
+            .message("운영진에 의해 " + groupName + " 에서 강제 퇴장 당하였습니다.")
+            .relatedId(groupId)
+            .relatedType("GROUP")
+            .relatedUrl(relatedUrl)
+            .senderId(creatorId)
+            .senderProfileImage(null)
+            .build();
+            
+        notificationMapper.insertNotification(notification);
+        System.out.println("모임 수락 알림 생성: " + creatorId + " -> " + userId);
     }
 
     @Transactional
