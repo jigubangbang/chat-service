@@ -30,7 +30,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'deployAWS', credentialsId: 'github-chat-service-pat', url: 'https://github.com/jigubangbang/chat-service.git'
+                git branch: 'deployAWS2', credentialsId: 'github-chat-service-pat', url: 'https://github.com/jigubangbang/chat-service.git'
             }
         }
 
