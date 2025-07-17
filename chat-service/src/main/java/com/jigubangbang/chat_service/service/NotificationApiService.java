@@ -163,7 +163,7 @@ public class NotificationApiService {
             .userId(userId)
             .type("FORCED_REMOVAL")
             .title("모임 강제 퇴장")
-            .message("운영진에 의해 " + groupName + " 에서 퇴장 당하였습니다.")
+            .message("운영진에 의해 " + groupName + " 에서 강제 퇴장 당하였습니다.")
             .relatedId(groupId)
             .relatedType("GROUP")
             .relatedUrl(relatedUrl)
