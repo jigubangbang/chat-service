@@ -13,6 +13,7 @@ import com.jigubangbang.chat_service.model.feign.ComNotificationRequestDto;
 import com.jigubangbang.chat_service.model.feign.FeedNotificationRequestDto;
 import com.jigubangbang.chat_service.model.feign.GroupAcceptedNotificationRequestDto;
 import com.jigubangbang.chat_service.model.feign.GroupApplyNotificationRequestDto;
+import com.jigubangbang.chat_service.model.feign.GroupRemovalNotificationDto;
 import com.jigubangbang.chat_service.model.feign.InquiryNotificationRequestDto;
 import com.jigubangbang.chat_service.service.NotificationApiService;
 
@@ -129,22 +130,6 @@ public class NotificationApiController {
         }
     }
 
-
-    // 투표기한 만료 알림 (추후)
-    /* 
-    @PostMapping("/user-com/polls/{poll_id}/close")
-    public ResponseEntity<Map<String, Object>> createVoteNotification(@PathVariable int pollId) {
-        // DTO도 추가 안함
-        try {
-            notificationService.createVoteExpired(
-        
-        } catch (Exception e) {
-            System.out.println("투표 만료 알림 실패" + e);
-            return ResponseEntity.status(500).body(Map.of("success", false, "message", e.getMessage()));
-        }
-    }
-    */
-
     // 그룹 가입 신청 알림
     @PostMapping("/travelgroup/applications")
     public ResponseEntity<Map<String, Object>> createGroupApplyNotification(@RequestBody GroupApplyNotificationRequestDto request) {
@@ -154,7 +139,6 @@ public class NotificationApiController {
                 request.getGroupName(),
                 request.getGroupId(),      
                 request.getRelatedUrl(),
-                
                 request.getApplicantId() ,
                 request.getNickname()       // 신청자가
             );
@@ -164,7 +148,6 @@ public class NotificationApiController {
             return ResponseEntity.status(500).body(Map.of("success", false, "message", e.getMessage()));
         }
     }
-
 
     // 그룹 가입 알림
     @PostMapping("/travelgroup/applications/accepted")
@@ -184,6 +167,26 @@ public class NotificationApiController {
             return ResponseEntity.status(500).body(Map.of("success", false, "message", e.getMessage()));
         }
     }
+
+    // CHAT_SERVICE
+    // 강제 퇴장 알림
+    @PostMapping("/chat/removal")
+    public ResponseEntity<Map<String, Object>> createFrocedRemovalNotification(@RequestBody GroupRemovalNotificationDto request) {
+        try {
+            notificationService.createForcedRemoval(
+                request.getUserId(),       
+                request.getGroupName(),       
+                request.getGroupId(),          
+                request.getRelatedUrl(),        
+                request.getCreatorId()               
+            );
+            return ResponseEntity.ok(Map.of("success", true));
+        } catch (Exception e) {
+            System.out.println("그룹 멤버 추가 실패" + e);
+            return ResponseEntity.status(500).body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
 
     // QUEST_SERVICE
     // 뱃지 획득 알림

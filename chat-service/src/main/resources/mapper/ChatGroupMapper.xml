@@ -9,6 +9,7 @@
       <result property="groupType" column="group_type"/>
       <result property="groupId" column="group_id"/>
       <result property="description" column="description"/>
+      <result property="groupName" column="group_name"/>
    </resultMap>
 
    <resultMap id="chatGroupResultMap" type="com.jigubangbang.chat_service.model.ChatGroupDto">
@@ -23,9 +24,16 @@
    </resultMap>
 
    <select id="getChatRoomInfo" parameterType="java.lang.Long" resultMap="chatRoomResultMap">
-      SELECT id, group_type, group_id, description
-      FROM chat_room
-      WHERE id = #{chatId}
+      SELECT cr.id, cr.group_type, cr.group_id, cr.description,
+          CASE 
+              WHEN cr.group_type = 'TRAVELMATE' THEN tm.title
+              WHEN cr.group_type = 'TRAVELINFO' THEN ti.title
+              ELSE '채팅방'
+          END as group_name
+      FROM chat_room cr
+      LEFT JOIN travelmate_post tm ON cr.group_type = 'TRAVELMATE' AND cr.group_id = tm.id
+      LEFT JOIN travel_info ti ON cr.group_type = 'TRAVELINFO' AND cr.group_id = ti.id
+      WHERE cr.id = #{chatId}
   </select>
 
   <select id="getChatGroupMemberWithNickname" resultMap="chatGroupResultMap">
