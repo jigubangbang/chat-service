@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jigubangbang.chat_service.mapper.ChatMapper">
+
+  <resultMap id="chatMsgResultMap" type="com.jigubangbang.chat_service.model.ChatMsgDto">
+       <id property="id" column="id"/>
+       <result property="chatId" column="chat_id"/>
+       <result property="senderId" column="sender_id"/>
+       <result property="nickname" column="nickname"/>
+       <result property="message" column="message"/>
+       <result property="createdAt" column="created_at"/>
+  </resultMap>
+
+  <select id="getChatMessages" parameterType="java.lang.Long" resultMap="chatMsgResultMap">
+      SELECT cm.id, cm.chat_id, cm.sender_id, u.nickname, cm.message, cm.created_at
+      FROM chat_message cm
+        JOIN user u ON cm.sender_id = u.user_id
+          WHERE cm.chat_id = #{chatId}
+      ORDER BY cm.created_at ASC
+  </select>
+
+  <select id="getRecChatMessages" parameterType="java.util.Map" resultMap="chatMsgResultMap">
+      SELECT cm.id, cm.chat_id, cm.sender_id, u.nickname, cm.message, cm.created_at
+      FROM chat_message cm
+        JOIN user u ON cm.sender_id = u.user_id
+        WHERE cm.chat_id = #{chatId}
+          AND cm.created_at &gt;= #{since}
+      ORDER BY cm.created_at ASC
+  </select>
+
+  <insert id="insertMessage" parameterType="com.jigubangbang.chat_service.model.ChatMsgDto" useGeneratedKeys="true" keyProperty="id">
+      INSERT INTO chat_message (chat_id, sender_id, message)
+      VALUES (#{chatId}, #{senderId}, #{message})
+  </insert>
+  
+  <delete id="deleteChatMessages" parameterType="Long">
+      DELETE FROM chat_message 
+      WHERE chat_id = #{chatId}
+  </delete>
+
+</mapper>
