@@ -122,4 +122,16 @@
     WHERE id = #{id}
   </update>
 
+  <select id="getGroupIdByRoomId" parameterType="Long" resultType="int">
+    SELECT group_id
+    FROM chat_room
+    WHERE group_type='TRAVELMATE' 
+    AND id=#{chatId}
+  </select>
+
+  <delete id="deleteTravelmateApplication" parameterType="int">
+    DELETE FROM travelmate_application
+    WHERE mate_id=#{travelmateId}
+  </delete>
+
 </mapper>

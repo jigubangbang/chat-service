@@ -136,8 +136,17 @@ public class ChatService {
             throw new IllegalArgumentException("최초 생성자는 채팅방을 나갈 수 없습니다.");
         }
         */
+
+        //채팅방 유형 구하기
+        int travelmateId = chatMapper.getGroupIdByRoomId(chatId);
         
+        //채팅방 나가기
         chatMapper.leaveGroupMemberByUser(chatId, userId);
+
+        //travelmate application 삭제
+        if (travelmateId > 0){
+            chatMapper.deleteTravelmateApplication(travelmateId);
+        }
         
         // 채팅방에 남은 멤버 수 확인
         /* 
