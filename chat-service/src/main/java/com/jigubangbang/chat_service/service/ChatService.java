@@ -7,10 +7,8 @@ import com.jigubangbang.chat_service.model.ChatRoomDto;
 import com.jigubangbang.chat_service.mapper.ChatMapper;
 import lombok.RequiredArgsConstructor;
 
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.PathVariable;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -129,8 +127,14 @@ public class ChatService {
     public void leaveGroupMember(Long chatId, String userId) {
 
         validateChatRoomMember(chatId, userId);
+        //채팅방 유형 구하기
+        Integer travelmateId = chatMapper.getGroupIdByRoomId(chatId);
+        //채팅방 나가기
         chatMapper.leaveGroupMemberByUser(chatId, userId);
-
+        //travelmate application 삭제
+        if (travelmateId != null && travelmateId > 0){
+            chatMapper.deleteTravelmateApplication(travelmateId);
+        }
     }
 
     // 채팅방 삭제 (최초 생성자 또는 관리자만 가능)
