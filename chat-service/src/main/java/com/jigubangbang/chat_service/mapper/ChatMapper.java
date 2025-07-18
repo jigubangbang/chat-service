@@ -52,5 +52,7 @@ public interface ChatMapper {
 
     // 채팅방 정보 수정
     int saveDescription(ChatRoomDto chatRoomDto);
-
+    
+    Integer getGroupIdByRoomId(Long chatId);
+    void deleteTravelmateApplication(int travelmateId);
 }
