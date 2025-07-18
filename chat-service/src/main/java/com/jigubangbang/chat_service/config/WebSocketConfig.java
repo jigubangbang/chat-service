@@ -2,6 +2,7 @@ package com.jigubangbang.chat_service.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
@@ -11,8 +12,15 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
   @Override
   public void configureMessageBroker(MessageBrokerRegistry registry) {
-    registry.enableSimpleBroker("/topic", "/queue");     // -> 브로커(SimpleBroker)
-    registry.setApplicationDestinationPrefixes("/app");   // -> 서버(SimpAnnotationMethod) -> broker(Channel) -> /topic -> 브로커(SimpleBroker)
+    ThreadPoolTaskScheduler ts = new ThreadPoolTaskScheduler();
+    ts.setPoolSize(1);
+    ts.setThreadNamePrefix("wss-heartbeat-thread-");
+    ts.initialize();
+
+    registry.enableSimpleBroker("/topic", "/queue")
+            .setHeartbeatValue(new long[]{30000, 30000})
+            .setTaskScheduler(ts);
+    registry.setApplicationDestinationPrefixes("/app");
   }
 
   @Override
