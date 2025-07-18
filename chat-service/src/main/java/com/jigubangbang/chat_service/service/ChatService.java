@@ -129,27 +129,9 @@ public class ChatService {
     public void leaveGroupMember(Long chatId, String userId) {
 
         validateChatRoomMember(chatId, userId);
-
-        /* 
-        String originalCreator = findOriginalCreator(chatId);
-        if (originalCreator.equals(userId)) {
-            throw new IllegalArgumentException("최초 생성자는 채팅방을 나갈 수 없습니다.");
-        }
-        */
-        
         chatMapper.leaveGroupMemberByUser(chatId, userId);
-        
-        // 채팅방에 남은 멤버 수 확인
-        /* 
-        List<ChatGroupDto> remainingMembers = chatMapper.getChatGroupMembers(chatId);
-        if (remainingMembers.size() == 1) {
-            // 마지막 멤버(최초 생성자)만 남았으면 채팅방 삭제
-            chatMapper.deleteChatRoom(chatId);
-        }
-        */
-    }
 
-    // ChatService.java에 추가할 메서드
+    }
 
     // 채팅방 삭제 (최초 생성자 또는 관리자만 가능)
     @Transactional
