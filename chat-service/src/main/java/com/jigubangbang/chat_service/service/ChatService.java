@@ -7,10 +7,8 @@ import com.jigubangbang.chat_service.model.ChatRoomDto;
 import com.jigubangbang.chat_service.mapper.ChatMapper;
 import lombok.RequiredArgsConstructor;
 
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.PathVariable;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -129,36 +127,15 @@ public class ChatService {
     public void leaveGroupMember(Long chatId, String userId) {
 
         validateChatRoomMember(chatId, userId);
-
-        /* 
-        String originalCreator = findOriginalCreator(chatId);
-        if (originalCreator.equals(userId)) {
-            throw new IllegalArgumentException("최초 생성자는 채팅방을 나갈 수 없습니다.");
-        }
-        */
-
         //채팅방 유형 구하기
         Integer travelmateId = chatMapper.getGroupIdByRoomId(chatId);
-        
         //채팅방 나가기
         chatMapper.leaveGroupMemberByUser(chatId, userId);
-
         //travelmate application 삭제
         if (travelmateId != null && travelmateId > 0){
             chatMapper.deleteTravelmateApplication(travelmateId);
         }
-        
-        // 채팅방에 남은 멤버 수 확인
-        /* 
-        List<ChatGroupDto> remainingMembers = chatMapper.getChatGroupMembers(chatId);
-        if (remainingMembers.size() == 1) {
-            // 마지막 멤버(최초 생성자)만 남았으면 채팅방 삭제
-            chatMapper.deleteChatRoom(chatId);
-        }
-        */
     }
-
-    // ChatService.java에 추가할 메서드
 
     // 채팅방 삭제 (최초 생성자 또는 관리자만 가능)
     @Transactional
