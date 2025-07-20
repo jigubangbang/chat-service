@@ -1,136 +1,272 @@
-# Chat Service Repository
+# 💬 Chat Service
 
-이 레포지토리는 Jigubangbang 프로젝트의 채팅 및 알림 관련 마이크로서비스를 관리합니다.
+**Jigubangbang 실시간 채팅 및 통합 알림 마이크로서비스**
 
-## 개요
+이 서비스는 Jigubangbang MSA 아키텍처에서 **실시간 통신의 중심 허브** 역할을 담당하며,
+모든 마이크로서비스의 알림을 통합 관리하는 핵심 인프라입니다.
 
-MSA(Microservice Architecture) 구조에 따라 실시간 채팅과 사용자 알림 기능을 담당하는 서비스입니다. WebSocket과 STOMP 프로토콜을 사용하여 클라이언트와 실시간 양방향 통신을 지원합니다.
+## 📋 서비스 개요
 
--   **Chat Service:** 1:1 채팅, 그룹 채팅, 채팅방 관리, 이전 메시지 조회 등 채팅 관련 모든 기능을 담당합니다.
--   **Notification Service:** 새로운 메시지, 친구 추가, 공지 등 다양한 유형의 실시간 알림을 사용자에게 전송하는 기능을 담당합니다.
+### 🎯 주요 역할
+- **실시간 채팅**: WebSocket/STOMP 기반 1:1 및 그룹 채팅
+- **통합 알림 허브**: 8개 마이크로서비스의 알림을 중앙집중식 관리
+- **MSA 통신 중계**: 서비스 간 실시간 이벤트 전파
 
-## 주요 기술 스택
+### 🏗️ 아키텍처 위치
+```
+Frontend (React) ←→ API Gateway ←→ Chat Service ←→ [Other Services]
+                                        ↕
+                                   WebSocket/STOMP
+                                        ↕
+                                   Notification Hub
+```
 
--   **Backend:** Java 17, Spring Boot 3, Spring Cloud, MyBatis, MySQL, Lombok, Feign Client
--   **Real-time:** Spring WebSocket, STOMP (Simple Text Oriented Messaging Protocol)
--   **Infra:** Eureka, Spring Cloud Gateway, Spring Cloud Config
+## 🚀 주요 기능
 
----
+### 1. 실시간 채팅 시스템
+- **WebSocket + STOMP** 기반 양방향 통신
+- **1:1 및 그룹 채팅** 지원
+- **실시간 메시지 브로드캐스트**
+- **채팅방 관리** (입장/퇴장, 운영진 권한)
+- **채팅 히스토리** 조회 및 관리
 
-## Chat & Notification Service
+### 2. 통합 알림 시스템
+**8가지 알림 타입 처리**
+- **피드 관련**: 좋아요, 댓글, 팔로우
+- **그룹 관련**: 신청, 수락, 강제퇴장  
+- **시스템 관련**: 뱃지, 문의답변, 블라인드
 
-### 주요 기능
+**핵심 기능**
+- 실시간 개인별 알림 전송
+- 읽음/안읽음 상태 관리
+- 알림 히스토리 관리
+- 서비스 간 알림 API 제공
 
--   **실시간 채팅:** WebSocket과 STOMP를 기반으로 1:1 및 그룹 채팅 기능을 제공합니다. 사용자는 구독 중인 채팅방으로 들어오는 메시지를 실시간으로 수신할 수 있습니다.
--   **채팅방 관리:** 사용자는 새로운 채팅방을 생성하거나 기존 채팅방 목록을 조회할 수 있습니다.
--   **메시지 조회:** 특정 채팅방의 이전 대화 내역을 조회할 수 있습니다.
--   **실시간 알림:** 다른 서비스(피드, 친구, 문의 등)에서 발생하는 이벤트를 Feign Client로 수신하여, WebSocket을 통해 특정 사용자에게 실시간 알림을 전송합니다.
--   **알림 관리:** 사용자는 수신한 알림 목록을 조회하고, 개별 또는 전체 알림을 읽음 처리할 수 있습니다.
+## 🛠️ 기술 스택
 
-### API Endpoints
+**Core Framework**
+- Java 17 + Spring Boot 3.4.6
+- Spring WebSocket + STOMP (실시간 통신)
+- Spring Cloud 2024.0.1 (MSA 구성)
 
-#### User-Facing REST API
+**Data & Persistence**
+- MyBatis 3.x + MySQL 8.x
+- HikariCP (커넥션 풀)
 
-| Method      | URL                                    | Role | 설명                               |
-| :---------- | :------------------------------------- | :--- | :--------------------------------- |
-| `POST`      | `/api/chat/{chatId}/join`              | USER | 채팅방 입장                        |
-| `GET`       | `/api/chat/{chatId}/messages`          | USER | 채팅방 최근 메시지 조회 (24시간)   |
-| `GET`       | `/api/chat/{chatId}/info`              | USER | 채팅방 정보 조회                   |
-| `GET`       | `/api/chat/{chatId}/members`           | USER | 채팅방 참여자 목록 조회            |
-| `GET`       | `/api/chat/{chatId}/original-creator`  | USER | 채팅방 최초 생성자 조회            |
-| `DELETE`    | `/api/chat/{chatId}/members/{userId}`  | USER | (운영진) 참여자 강제 탈퇴          |
-| `DELETE`    | `/api/chat/{chatId}/members/me`        | USER | 채팅방 나가기                      |
-| `POST`      | `/api/chat/{chatId}/promote/{userId}`  | USER | (운영진) 운영진으로 승격           |
-| `POST`      | `/api/chat/{chatId}/demote/{userId}`   | USER | (운영진) 운영진 권한 해제          |
-| `PUT`       | `/api/chat/{chatId}/description`       | USER | (운영진) 채팅방 설명 수정          |
-| `GET`       | `/api/notifications/all`               | USER | 내 전체 알림 목록 조회 (페이징)    |
-| `GET`       | `/api/notifications/unread`            | USER | 읽지 않은 알림 목록 조회           |
-| `GET`       | `/api/notifications/unread-count`      | USER | 읽지 않은 알림 개수 조회           |
-| `POST`      | `/api/notifications/{id}/read`         | USER | 특정 알림 읽음 처리                |
-| `POST`      | `/api/notifications/read-all`          | USER | 모든 알림 읽음 처리                |
-| `DELETE`    | `/api/notifications/{id}`              | USER | 특정 알림 삭제                     |
+**MSA Components**
+- Eureka Client (서비스 디스커버리)
+- Feign Client (서비스 간 통신)
+- Spring Cloud Config (설정 관리)
 
-#### Internal REST API (Called by other services)
+**Security**
+- JWT Authentication
+- Custom Feign Interceptor
 
-| Method | URL                                      | Calling Service | 설명                         |
-| :----- | :--------------------------------------- | :-------------- | :--------------------------- |
-| `POST` | `/api/notifications`                     | (All)           | 범용 알림 생성               |
-| `POST` | `/api/notifications/feed/follow`         | Feed Service    | 팔로우 알림 생성             |
-| `POST` | `/api/notifications/feed/like`           | Feed Service    | 피드 좋아요 알림 생성        |
-| `POST` | `/api/notifications/feed/comment`        | Feed Service    | 피드 댓글 알림 생성          |
-| `POST` | `/api/notifications/posts/comment`       | Com Service     | 게시물 댓글 알림 생성        |
-| `POST` | `/api/notifications/travelgroup/applications` | Com Service     | 그룹 가입 신청 알림 생성     |
-| `POST` | `/api/notifications/travelgroup/applications/{applicantId}` | Com Service     | 그룹 가입 수락 알림 생성     |
-| `POST` | `/api/notifications/quests/badges/earned` | Quest Service   | 뱃지 획득 알림 생성          |
-| `POST` | `/api/notifications/admin/badges/revoked`| Admin Service   | 뱃지 수거 알림 생성          |
-| `POST` | `/api/notifications/inquiry`             | Admin Service   | 1:1 문의 답변 알림 생성      |
-| `POST` | `/api/notifications/blind`               | Admin Service   | 블라인드 처리 알림 생성      |
+## 🌐 API 엔드포인트
 
-#### WebSocket (STOMP) Endpoints
+### REST API (사용자용)
+```bash
+# 채팅 관리
+GET    /chat/rooms          # 채팅방 목록 조회
+GET    /chat/rooms/{id}     # 채팅방 정보 조회
+POST   /chat/rooms          # 채팅방 생성
+GET    /chat/messages/{chatId}  # 채팅 히스토리 조회
 
-| Destination                      | Type        | 설명                               |
-| :------------------------------- | :---------- | :--------------------------------- |
-| `/app/chat.addUser/{chatId}`     | `PUBLISH`   | 채팅방 입장 알림 (System 메시지)   |
-| `/app/chat.send/{chatId}`        | `PUBLISH`   | 특정 채팅방으로 메시지 전송        |
-| `/topic/chat/{chatId}`           | `SUBSCRIBE` | 특정 채팅방 구독 (메시지 수신)     |
-| `/topic/chat/{chatId}/kick/{userId}` | `SUBSCRIBE` | (개인) 강제 퇴장 알림 수신         |
-| `/queue/notifications/{userId}`  | `SUBSCRIBE` | 개인 알림 구독 (알림 수신)         |
+# 알림 관리  
+GET    /notifications       # 알림 목록 조회
+PUT    /notifications/{id}/read  # 알림 읽음 처리
+DELETE /notifications/{id}  # 알림 삭제
+```
 
-### 데이터베이스 스키마
+### WebSocket Endpoints
+```bash
+# 연결
+CONNECT /ws/chat
 
-#### `chat_room`
+# 구독 (수신)
+SUBSCRIBE /topic/chat/{chatId}           # 채팅방 메시지
+SUBSCRIBE /queue/notifications/{userId}  # 개인 알림
 
-채팅방 정보를 저장하는 테이블입니다.
+# 발행 (송신)
+SEND /app/chat.send/{chatId}            # 메시지 전송
+```
 
-| Column      | Type         | Description                        |
-| :---------- | :----------- | :--------------------------------- |
-| `id`        | BIGINT (PK, AI) | 채팅방 고유 ID                     |
-| `group_type`| VARCHAR(255) | 채팅방 타입 (e.g., 'POST', 'QUEST') |
-| `group_id`  | VARCHAR(255) | 관련 그룹 ID (e.g., 게시글 ID)     |
-| `description`| VARCHAR(255) | 채팅방 설명                        |
+### Internal API (서비스간 통신)
+```bash
+# 알림 생성 (다른 서비스에서 호출)
+POST /notifications/api/follow          # 팔로우 알림
+POST /notifications/api/group-accepted  # 그룹 수락 알림
+POST /notifications/api/badge-earned    # 뱃지 획득 알림
+# ... 기타 8가지 알림 타입
+```
 
-#### `chat_message`
+## 🚀 실행 방법
 
-채팅 메시지를 저장하는 테이블입니다.
-
-| Column     | Type        | Description                        |
-| :--------- | :---------- | :--------------------------------- |
-| `id`       | BIGINT (PK, AI) | 메시지 고유 ID                     |
-| `chat_id`  | BIGINT (FK) | `chat_room`의 ID                   |
-| `sender_id`| VARCHAR(255)| 발신자 ID                          |
-| `nickname` | VARCHAR(255)| 발신자 닉네임                      |
-| `message`  | TEXT        | 메시지 내용                        |
-| `created_at`| TIMESTAMP   | 메시지 발송 시각                   |
-
-#### `notification`
-
-사용자 알림을 저장하는 테이블입니다.
-
-| Column               | Type         | Description                        |
-| :------------------- | :----------- | :--------------------------------- |
-| `id`                 | BIGINT (PK, AI) | 알림 고유 ID                       |
-| `user_id`            | VARCHAR(255) | 알림을 수신할 사용자 ID            |
-| `type`               | VARCHAR(255) | 알림 타입 (e.g., 'CHAT', 'FRIEND') |
-| `title`              | VARCHAR(255) | 알림 제목                          |
-| `message`            | VARCHAR(255) | 알림 내용                          |
-| `related_id`         | INT          | 관련 콘텐츠 ID                     |
-| `related_type`       | VARCHAR(255) | 관련 콘텐츠 타입                   |
-| `related_url`        | VARCHAR(255) | 클릭 시 이동할 URL                 |
-| `sender_id`          | VARCHAR(255) | 발신자 ID                          |
-| `sender_profile_image`| VARCHAR(255) | 발신자 프로필 이미지 URL           |
-| `is_read`            | BOOLEAN      | 읽음 여부                          |
-| `read_at`            | TIMESTAMP    | 읽은 시각                          |
-| `created_at`         | TIMESTAMP    | 생성 시각                          |
-| `updated_at`         | TIMESTAMP    | 수정 시각                          |
-
-## 실행 방법
-
-1.  **Config Server 실행:** 설정 정보를 가져오기 위해 Config Server를 먼저 실행해야 합니다.
-2.  **Eureka Server 실행:** 서비스 디스커버리를 위해 Eureka Server를 실행합니다.
-3.  **Chat Service 실행:**
+1. **Config Server** 실행 (8888 포트)
+2. **Eureka Server** 실행 (8761 포트)
+3. **MySQL** 실행 및 DB 생성
+4. **User Service** 실행 (Feign Client 의존성)
+5.  **Chat Service 실행:**
     ```bash
     # chat-service 디렉토리로 이동하여 아래 명령어 실행
     ./mvnw spring-boot:run
     ```
-4.  **API Gateway 실행:** 라우팅을 위해 API Gateway를 실행합니다.
-5.  **프론트엔드 실행:** `msa-front` 디렉토리에서 WebSocket을 지원하는 클라이언트를 실행합니다.
+6.  **API Gateway 실행:** 라우팅을 위해 API Gateway를 실행합니다.
+7.  **프론트엔드 실행:** `msa-front` 디렉토리에서 WebSocket을 지원하는 클라이언트를 실행합니다.
+
+### 로컬 실행
+```bash
+# 1. 프로젝트 클론
+git clone https://github.com/jigubangbang/chat-service.git
+cd chat-service
+
+# 2. 의존성 설치 및 빌드
+./mvnw clean install
+
+# 3. 애플리케이션 실행
+./mvnw spring-boot:run
+
+# 4. 서비스 확인
+curl http://localhost:8083/actuator/health
+```
+
+### Docker 실행
+```bash
+# Docker 이미지 빌드
+docker build -t jigubangbang/chat-service .
+
+# 컨테이너 실행
+docker run -p 8083:8083 jigubangbang/chat-service
+```
+
+## 💡 주요 구현 사항
+
+### 1. 실시간 메시지 동기화
+**문제**: 다중 사용자 환경에서 메시지 순서 보장  
+**해결**: STOMP 프로토콜과 트랜잭션 활용
+
+```java
+@MessageMapping("/chat.send/{chatId}")
+public void sendMessage(@DestinationVariable Long chatId, @Payload ChatMsgDto dto) {
+    dto.setChatId(chatId);
+    chatService.sendMessage(dto);  // DB 저장 (트랜잭션)
+    
+    // 실시간 브로드캐스트
+    messagingTemplate.convertAndSend("/topic/chat/" + chatId, responseDto);
+}
+```
+
+### 2. MSA 인증 정보 전파
+**문제**: Feign Client 호출 시 JWT 토큰 전달  
+**해결**: Custom Feign Interceptor 구현
+
+```java
+@Override
+public void apply(RequestTemplate template) {
+    ServletRequestAttributes attributes = 
+        (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        
+    if (attributes != null) {
+        String authHeader = attributes.getRequest().getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            template.header("Authorization", authHeader);
+        }
+    }
+}
+```
+
+### 3. 복잡한 알림 타입 관리
+**문제**: 8개 서비스에서 오는 서로 다른 알림 형태  
+**해결**: 타입별 전용 메서드 + 공통 패턴
+
+```java
+// 각 서비스별 맞춤 알림 생성
+public void createFollowNotification(String authorId, ...)    // Feed Service
+public void createGroupAccepted(String applicantId, ...)      // Com Service  
+public void createBadgeEarned(String userId, ...)             // Quest Service
+```
+
+### 4. 복잡한 DB 조인 최적화
+**문제**: 채팅방, 사용자, 그룹 정보의 복잡한 관계  
+**해결**: MyBatis ResultMap과 조건부 조인
+
+```xml
+<select id="getChatRoomInfo" resultMap="chatRoomResultMap">
+    SELECT cr.id, cr.group_type, cr.group_id, cr.description,
+        CASE 
+            WHEN cr.group_type = 'TRAVELMATE' THEN tm.title
+            WHEN cr.group_type = 'TRAVELINFO' THEN ti.title  
+            ELSE '알 수 없음'
+        END as group_name
+    FROM chat_room cr
+    LEFT JOIN travelmate tm ON cr.group_id = tm.id AND cr.group_type = 'TRAVELMATE'
+    LEFT JOIN travelinfo ti ON cr.group_id = ti.id AND cr.group_type = 'TRAVELINFO'
+</select>
+```
+
+## 🔧 설정 정보
+
+### 주요 포트
+- **서비스 포트**: 8083
+- **WebSocket**: ws://localhost:8083/ws/chat
+
+### 연동 서비스
+- **user-service**: 사용자 정보 조회
+- **com-service**: 커뮤니티 관련 데이터
+- **feed-service**: 피드 알림 요청
+- **quest-service**: 뱃지 알림 요청
+- **admin-service**: 문의 답변 알림
+
+## 🚨 트러블슈팅
+
+### WebSocket 연결 실패
+```bash
+# 증상: WebSocket 연결이 되지 않음
+# 원인: CORS 설정 또는 JWT 토큰 문제
+# 해결: 브라우저 개발자 도구에서 네트워크 탭 확인
+
+# JWT 토큰 확인
+curl -H "Authorization: Bearer YOUR_TOKEN" http://localhost:8083/chat/rooms
+```
+
+### 알림이 전송되지 않음
+```bash
+# 증상: 알림 API 호출했지만 실시간 알림 미전송
+# 원인: WebSocket 구독 상태 확인 필요
+# 해결: 프론트엔드에서 /queue/notifications/{userId} 구독 상태 확인
+```
+
+### Feign Client 인증 오류
+```bash
+# 증상: 401 Unauthorized from user-service
+# 원인: JWT 토큰 전파 실패
+# 해결: FeignClientInterceptor 동작 확인 및 토큰 유효성 검증
+```
+## 👥 기여자
+
+**개발 담당**: **이설영** (팀장)
+- WebSocket/STOMP 실시간 통신 구현
+- 통합 알림 시스템 설계 및 구현
+- MSA 서비스 간 연동 로직
+- JWT 인증 및 보안 처리
+
+## 🔗 관련 리포지토리
+
+- **전체 프로젝트**: [Jigubangbang Organization](https://github.com/jigubangbang)
+- **인프라 서비스**: [infra-platform](https://github.com/jigubangbang/infra-platform)
+- **사용자 서비스**: [user-admin-repo](https://github.com/jigubangbang/user-admin-repo)
+- **프론트엔드**: [msa-front](https://github.com/jigubangbang/msa-front)
+
+---
+
+**💡 Quick Start**
+```bash
+# 전체 인프라가 실행된 상태에서
+git clone https://github.com/jigubangbang/chat-service.git
+cd chat-service && ./mvnw spring-boot:run
+
+# WebSocket 테스트
+wscat -c ws://localhost:8083/ws/chat
+```
+
+실시간 소통의 핵심을 담당하는 Chat Service와 함께 원활한 커뮤니케이션을 경험해보세요! 🎉
