@@ -229,11 +229,21 @@ public void createBadgeEarned(String userId, ...)             // Quest Service
 curl -H "Authorization: Bearer YOUR_TOKEN" http://localhost:8083/chat/rooms
 ```
 
-### 알림이 전송되지 않음
+### 강제 퇴장 시스템 구현
 ```bash
-# 증상: 알림 API 호출했지만 실시간 알림 미전송
-# 원인: WebSocket 구독 상태 확인 필요
-# 해결: 프론트엔드에서 /queue/notifications/{userId} 구독 상태 확인
+# 증상: WebSocket 연결 상태에서 강제 퇴장 시 세션 불일치
+# 원인: WebSocket 세션과 채팅방 상태 관리 혼재
+# 해결: 세션 관리 분리 + 특별 메시지 타입 활용
+
+# 1. 강제 퇴장 메시지 전송 (서버 → 클라이언트)
+// MessageType.FORCE_EXIT로 클라이언트에 알림
+
+# 2. 세션 강제 종료 후 재연결 유도
+// 서버 측 WebSocket 세션 종료
+// 클라이언트 측 자동 재연결 처리
+
+# 3. 실시간 참여자 목록 동기화
+// 채팅방 참여자 목록 즉시 업데이트
 ```
 
 ### Feign Client 인증 오류
@@ -242,6 +252,7 @@ curl -H "Authorization: Bearer YOUR_TOKEN" http://localhost:8083/chat/rooms
 # 원인: JWT 토큰 전파 실패
 # 해결: FeignClientInterceptor 동작 확인 및 토큰 유효성 검증
 ```
+
 ## 👥 기여자
 
 **개발 담당**: **이설영** (팀장)
