@@ -237,7 +237,7 @@ public class NotificationApiService {
             .userId(userId)
             .type("BADGE_REVOKED")
             .title("뱃지 수거")
-            .message("퀘스트 인증 미흡으로 " + badgeName + "뱃지를 회수하였습니다")
+            .message("퀘스트 인증 미흡으로 '" + badgeName + "' 뱃지를 회수하였습니다")
             .relatedId(badgeId)
             .relatedType("BADGE")
             .relatedUrl(relatedUrl)
