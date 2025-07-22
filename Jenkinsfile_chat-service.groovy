@@ -7,22 +7,14 @@ pipeline {
     }
 
     environment {
-        // AWS 계정 및 리전 정보
-        AWS_REGION = 'ap-northeast-2'
-        AWS_ACCOUNT_ID = '947625948810'
-
-        // EKS 클러스터 정보
-        EKS_CLUSTER_NAME = 'msa-eks-cluster'
-        EKS_KUBECTL_ROLE_ARN = "arn:aws:iam::${AWS_ACCOUNT_ID}:role/JenkinsEKSDeployerRole"
-
-        // Docker 이미지 태그 (Jenkins 빌드 번호 사용)
+        // NAS 환경에 맞는 Docker Registry와 Kubeconfig 경로 설정
+        DOCKER_REGISTRY = 'localhost:5000' 
         IMAGE_TAG = "${env.BUILD_NUMBER}"
-
-        // kubectl 설정 파일 경로
-        KUBECONFIG_PATH = "${WORKSPACE}/kubeconfig"
+        KUBECONFIG = '/var/lib/jenkins/.kube/config' 
+        NAMESPACE = 'bit-2503' // Kubernetes deployment.yaml의 네임스페이스와 일치
     }
 
-    // GitHub 웹훅 트리거 (deployAWS 브랜치에 푸시 시)
+    // GitHub 웹훅 트리거 (deployNAS 브랜치에 푸시 시)
     triggers {
         githubPush()
     }
@@ -30,109 +22,164 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'deployAWS2', credentialsId: 'github-chat-service-pat', url: 'https://github.com/jigubangbang/chat-service.git'
+                // chat-service 단일 레포지토리 사용
+                git branch: 'deployNAS', credentialsId: 'github-token-333', url: 'https://github.com/jigubangbang/chat-service.git'
             }
         }
 
-        stage('Set AWS Kubeconfig') {
+        stage('Cleanup Failed Resources') {
             steps {
                 script {
-                    withCredentials([aws(credentialsId: 'aws-cicd-credentials')]) {
-                        sh "aws eks update-kubeconfig --name ${env.EKS_CLUSTER_NAME} --region ${env.AWS_REGION} --kubeconfig ${env.KUBECONFIG_PATH} --role-arn ${env.EKS_KUBECTL_ROLE_ARN}"
+                    echo "=== 실패한 리소스 정리 ==="
+                    sh """
+                        export KUBECONFIG=${env.KUBECONFIG}
+                        
+                        echo "Cleaning up failed ReplicaSets..."
+                        kubectl get rs -n ${env.NAMESPACE} --no-headers | awk '\$2 == 0 && \$3 == 0 && \$4 == 0 {print \$1}' | xargs -r kubectl delete rs -n ${env.NAMESPACE}
+                        
+                        echo "Cleaning up failed Pods..."
+                        kubectl get pods -n ${env.NAMESPACE} --field-selector=status.phase=Failed -o name | xargs -r kubectl delete -n ${env.NAMESPACE}
+                        kubectl get pods -n ${env.NAMESPACE} --field-selector=status.phase=Error -o name | xargs -r kubectl delete -n ${env.NAMESPACE}
+                        
+                        echo "Cleaning up old Docker images for current project (chat-service)..."
+                        docker rmi \$(docker images ${env.DOCKER_REGISTRY}/chat-service --format "{{.Repository}}:{{.Tag}}" | grep -v ":${env.IMAGE_TAG}\\|:latest" | head -5) 2>/dev/null || true
+                        
+                        echo "Current resource usage:"
+                        kubectl get resourcequota -n ${env.NAMESPACE} || echo "No resource quota found"
+                        kubectl get pods -n ${env.NAMESPACE}
+                    """
+                }
+            }
+        }
+
+        stage('Determine Changes') {
+            steps {
+                script {
+                    // 모노레포가 아니므로 변경 감지 로직은 단순화.
+                    // chat-service repo 자체의 변경은 항상 빌드/배포로 간주.
+                    echo "Build Number: ${env.BUILD_NUMBER}"
+                    echo "Git Commit: ${env.GIT_COMMIT}"
+                    echo "Generated IMAGE_TAG: ${env.IMAGE_TAG}"
+
+                    // FORCE_FULL_DEPLOY 파라미터 또는 첫 빌드 시 항상 배포
+                    if (params.FORCE_FULL_DEPLOY || env.BUILD_NUMBER == '1') {
+                        env.SHOULD_DEPLOY_CHAT_SERVICE = 'true'
+                        echo "Force full deployment or first build - deploying chat-service."
+                    } else {
+                        // 변경 사항 감지 (단일 레포이므로 단순히 변경이 있으면 배포)
+                        def rawChanges = sh(returnStdout: true, script: 'git diff --name-only HEAD HEAD^1 || true').trim()
+                        if (!rawChanges.isEmpty()) {
+                            env.SHOULD_DEPLOY_CHAT_SERVICE = 'true'
+                            echo "Detected changes in chat-service repository. Deploying."
+                        } else {
+                            env.SHOULD_DEPLOY_CHAT_SERVICE = 'false'
+                            echo "No changes detected in chat-service. Skipping deployment."
+                            currentBuild.result = 'SUCCESS'
+                            return // 변경 사항이 없으면 파이프라인 종료
+                        }
                     }
                 }
             }
         }
 
         stage('Deploy Chat Service') {
+            when {
+                expression { return env.SHOULD_DEPLOY_CHAT_SERVICE == 'true' }
+            }
             steps {
                 script {
-                    // Chat Service는 Config Server와 Eureka Server가 준비될 때까지 기다림
-                    retry(3) {
-                        sh "KUBECONFIG=${env.KUBECONFIG_PATH} kubectl wait --for=condition=available deployment/config-server-deployment -n default --timeout=600s || exit 1"
+                    // Config Server와 Eureka Server 대기 (NAS K8s 클러스터 내에서)
+                    echo "Waiting for Config Server and Eureka Server to be ready in ${env.NAMESPACE}..."
+                    retry(5) { // 재시도 횟수 증가
+                        sh "KUBECONFIG=${env.KUBECONFIG} kubectl wait --for=condition=available deployment/config-server-deployment -n ${env.NAMESPACE} --timeout=300s || exit 1"
                     }
                     echo "Config Server is ready."
 
-                    // --- Config Server 상태 상세 디버깅 시작 (Chat Service 배포 전) ---
-                    echo "--- Config Server 상태 상세 디버깅 시작 ---"
-                    echo "Config Server 파드 목록:"
-                    sh "KUBECONFIG=${env.KUBECONFIG_PATH} kubectl get pods -n default -l app=config-server || true"
-                    echo "Config Server 배포 이벤트 확인:"
-                    sh "KUBECONFIG=${env.KUBECONFIG_PATH} kubectl describe deployment/config-server-deployment -n default || true"
-                    echo "Config Server 파드 로그 확인 (왜 DOWN 상태인지 확인):"
-                    sh "KUBECONFIG=${env.KUBECONFIG_PATH} kubectl get pods -n default -l app=config-server -o custom-columns=NAME:.metadata.name --no-headers | xargs -r -I {} sh -c 'echo \"--- Config Server 파드 {} 로그: ---\"; KUBECONFIG=${env.KUBECONFIG_PATH} kubectl logs {} -n default || true; echo \"\";' || true"
-                    echo "--- Config Server 상태 상세 디버깅 끝 ---"
-                    // --- Config Server 자체 디버깅 끝 ---
-
-                    retry(3) {
-                        sh "KUBECONFIG=${env.KUBECONFIG_PATH} kubectl wait --for=condition=available deployment/eureka-server-deployment -n default --timeout=600s || exit 1"
+                    retry(5) { // 재시도 횟수 증가
+                        sh "KUBECONFIG=${env.KUBECONFIG} kubectl wait --for=condition=available deployment/eureka-server-deployment -n ${env.NAMESPACE} --timeout=300s || exit 1"
                     }
                     echo "Eureka Server is ready. Proceeding with Chat Service."
 
-                    def ecrRepoName = 'msa-chat-service' // ECR 레포지토리 이름
-                    def fullEcrRepoUrl = "${env.AWS_ACCOUNT_ID}.dkr.ecr.${env.AWS_REGION}.amazonaws.com/${ecrRepoName}"
+                    def serviceName = 'chat-service'
+                    def imageUrl = "${env.DOCKER_REGISTRY}/${serviceName}:${env.IMAGE_TAG}"
 
-                    echo "--- Building and Deploying ${ecrRepoName} ---"
-                    def dockerImage = docker.build("${fullEcrRepoUrl}:${env.IMAGE_TAG}", "${params.FORCE_FULL_DEPLOY ? '--no-cache' : ''} .")
-
-                    // ECR 로그인 및 이미지 푸시
-                    withCredentials([aws(credentialsId: 'aws-cicd-credentials')]) {
-                        sh "aws ecr get-login-password --region ${env.AWS_REGION} | docker login --username AWS --password-stdin ${fullEcrRepoUrl.split('/')[0]}"
-                        dockerImage.push("${env.IMAGE_TAG}")
-                        dockerImage.push("latest") // latest 태그도 함께 푸시
-                    }
+                    echo "--- Building Docker image: ${imageUrl} ---"
+                    sh """
+                        docker build -t ${imageUrl} .
+                        docker push ${imageUrl}
+                    """
+                    echo "--- Docker image pushed: ${imageUrl} ---"
 
                     // --- 기존 배포 강제 삭제 (새로운 이미지의 클린한 롤아웃을 보장하기 위해) ---
-                    echo "--- 기존 배포 강제 삭제 (새로운 이미지 클린 롤아웃 보장) ---"
-                    sh "KUBECONFIG=${env.KUBECONFIG_PATH} kubectl delete deployment chat-service-deployment -n default --ignore-not-found || true"
-                    sh "KUBECONFIG=${env.KUBECONFIG_PATH} kubectl wait --for=delete deployment/chat-service-deployment -n default --timeout=300s --for=delete || true"
-                    echo "--- 기존 배포 삭제 완료 (존재했다면) ---"
-                    // --- 기존 배포 강제 삭제 끝 ---
+                    echo "--- Existing deployment cleanup (to ensure clean rollout) ---"
+                    sh "KUBECONFIG=${env.KUBECONFIG} kubectl delete deployment chat-service-deployment -n ${env.NAMESPACE} --ignore-not-found || true"
+                    sh "KUBECONFIG=${env.KUBECONFIG} kubectl wait --for=delete deployment/chat-service-deployment -n ${env.NAMESPACE} --timeout=300s --for=delete || true"
+                    echo "--- Existing deployment deleted (if it existed) ---"
 
+                    // Kubernetes 배포 (NAS 환경)
+                    echo "--- Applying Kubernetes deployments for ${serviceName} ---"
                     sh """
-                        KUBECONFIG=${env.KUBECONFIG_PATH} sed -i "s|__ECR_IMAGE_FULL_PATH__|${fullEcrRepoUrl}:${env.IMAGE_TAG}|g" k8s/deployment.yaml
-                        KUBECONFIG=${env.KUBECONFIG_PATH} kubectl apply -f k8s/deployment.yaml -n default
-                        KUBECONFIG=${env.KUBECONFIG_PATH} kubectl apply -f k8s/service.yaml -n default
+                        export KUBECONFIG=${env.KUBECONFIG}
+                        
+                        sed -i "s|__ECR_IMAGE_FULL_PATH__|${imageUrl}|g" k8s/deployment.yaml
+                        
+                        kubectl apply -f k8s/deployment.yaml -n ${env.NAMESPACE}
+                        kubectl apply -f k8s/service.yaml -n ${env.NAMESPACE}
                     """
+                    echo "--- Kubernetes deployments applied for ${serviceName} ---"
 
                     // --- Kubernetes Deployment Debugging (Chat Service 파드 관련) ---
-                    echo "--- Kubernetes Deployment Debugging (Chat Service 파드 관련) ---"
-                    echo "배포 상태 확인 전 파드 목록:"
-                    sh "KUBECONFIG=${env.KUBECONFIG_PATH} kubectl get pods -n default -l app=chat-service || true"
-                    echo "배포 이벤트 확인:"
-                    sh "KUBECONFIG=${env.KUBECONFIG_PATH} kubectl describe deployment/chat-service-deployment -n default || true"
+                    echo "--- Kubernetes Deployment Debugging (Chat Service Pods) ---"
+                    echo "Pods in namespace ${env.NAMESPACE} after apply:"
+                    sh "KUBECONFIG=${env.KUBECONFIG} kubectl get pods -n ${env.NAMESPACE} -l app=${serviceName} || true"
+                    echo "Deployment events:"
+                    sh "KUBECONFIG=${env.KUBECONFIG} kubectl describe deployment/${serviceName}-deployment -n ${env.NAMESPACE} || true"
 
-                    echo "파드 로그 확인 (메인 컨테이너):"
-                    sh "KUBECONFIG=${env.KUBECONFIG_PATH} kubectl get pods -n default -l app=chat-service -o custom-columns=NAME:.metadata.name --no-headers | xargs -r -I {} sh -c 'echo \"--- 메인 컨테이너 {} 로그: ---\"; KUBECONFIG=${env.KUBECONFIG_PATH} kubectl logs {} -n default -c chat-service-container || true; echo \"\";' || true"
+                    echo "Main container logs:"
+                    sh "KUBECONFIG=${env.KUBECONFIG} kubectl get pods -n ${env.NAMESPACE} -l app=${serviceName} -o custom-columns=NAME:.metadata.name --no-headers | xargs -r -I {} sh -c 'echo \"--- Main container {} logs: ---\"; KUBECONFIG=${env.KUBECONFIG} kubectl logs {} -n ${env.NAMESPACE} -c ${serviceName}-container || true; echo \"\";' || true"
 
-                    echo "파드 초기화 컨테이너 로그 확인 (wait-for-config-server):"
-                    sh "KUBECONFIG=${env.KUBECONFIG_PATH} kubectl get pods -n default -l app=chat-service -o custom-columns=NAME:.metadata.name --no-headers | xargs -r -I {} sh -c 'echo \"--- 초기화 컨테이너 (config-server) {} 로그: ---\"; KUBECONFIG=${env.KUBECONFIG_PATH} kubectl logs {} -n default -c wait-for-config-server || true; echo \"\";' || true"
+                    echo "Init container logs (wait-for-config-server):"
+                    sh "KUBECONFIG=${env.KUBECONFIG} kubectl get pods -n ${env.NAMESPACE} -l app=${serviceName} -o custom-columns=NAME:.metadata.name --no-headers | xargs -r -I {} sh -c 'echo \"--- Init container (config-server) {} logs: ---\"; KUBECONFIG=${env.KUBECONFIG} kubectl logs {} -n ${env.NAMESPACE} -c wait-for-config-server || true; echo \"\";' || true"
 
-                    echo "파드 초기화 컨테이너 로그 확인 (wait-for-eureka):"
-                    sh "KUBECONFIG=${env.KUBECONFIG_PATH} kubectl get pods -n default -l app=chat-service -o custom-columns=NAME:.metadata.name --no-headers | xargs -r -I {} sh -c 'echo \"--- 초기화 컨테이너 (eureka) {} 로그: ---\"; KUBECONFIG=${env.KUBECONFIG_PATH} kubectl logs {} -n default -c wait-for-eureka || true; echo \"\";' || true"
+                    echo "Init container logs (wait-for-eureka):"
+                    sh "KUBECONFIG=${env.KUBECONFIG} kubectl get pods -n ${env.NAMESPACE} -l app=${serviceName} -o custom-columns=NAME:.metadata.name --no-headers | xargs -r -I {} sh -c 'echo \"--- Init container (eureka) {} logs: ---\"; KUBECONFIG=${env.KUBECONFIG} kubectl logs {} -n ${env.NAMESPACE} -c wait-for-eureka || true; echo \"\";' || true"
 
-                    echo "--- End Kubernetes Deployment Debugging (Chat Service 파드 관련) ---"
-                    // --- 디버깅 끝 ---
+                    echo "--- End Kubernetes Deployment Debugging (Chat Service Pods) ---"
 
+                    // 롤아웃 상태 대기
                     sh """
-                        KUBECONFIG=${env.KUBECONFIG_PATH} kubectl rollout status deployment/chat-service-deployment -n default --timeout=600s || exit 1
+                        KUBECONFIG=${env.KUBECONFIG} kubectl rollout status deployment/${serviceName}-deployment -n ${env.NAMESPACE} --timeout=600s || exit 1
                     """
-                    echo "Chat Service 배포 완료."
+                    echo "${serviceName} 배포 완료."
+                }
+            }
+        }
+        
+        stage('Verify Deployment') { // 확인용 함수 추가
+            steps {
+                script {
+                    echo "=== 배포 확인 ==="
+                    sh """
+                        export KUBECONFIG=${env.KUBECONFIG}
+                        echo "Pods in namespace ${env.NAMESPACE}:"
+                        kubectl get pods -n ${env.NAMESPACE}
+                        echo "Services in namespace ${env.NAMESPACE}:"
+                        kubectl get services -n ${env.NAMESPACE}
+                    """
                 }
             }
         }
     }
-
 
     post {
         always {
             cleanWs()
         }
         failure {
-            echo "CI/CD Pipeline for chat-service failed."
+            echo "❌ CI/CD Pipeline failed for chat-service."
         }
         success {
-            echo "CI/CD Pipeline for chat-service finished successfully."
+            echo "✅ CI/CD Pipeline finished successfully for chat-service."
         }
     }
 }
